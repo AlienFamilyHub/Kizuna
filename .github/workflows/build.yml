@@ -23,7 +23,7 @@ jobs:
         uses: dtolnay/rust-toolchain@stable
       
       - name: Node setup # 设置 Node
-        uses: actions/setup-node@v3
+        uses: actions/setup-node@v4
         with:
           node-version: "22" # 使用 Node.js 18 版本
 
