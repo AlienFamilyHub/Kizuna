@@ -17,7 +17,7 @@ jobs:
 
     steps:
       - name: Checkout repository # 检出仓库
-        uses: actions/checkout@v3
+        uses: actions/checkout@v4
 
       - name: Rust setup # 设置 Rust
         uses: dtolnay/rust-toolchain@stable
