@@ -25,4 +25,5 @@ onUnmounted(() => {
 	<Sidebar>
 		<NuxtPage class="ml-0 lg:ml-60" />
 	</Sidebar>
+	<UNotifications />
 </template>

@@ -51,7 +51,6 @@ pub fn build_data(
 }
 
 pub fn report(update_data: HashMap<String, Value>, endpoint: &str) -> String {
-
     let client = Client::builder()
         .timeout(Duration::from_secs(8))
         .danger_accept_invalid_certs(true) // 忽略证书验证
@@ -63,7 +62,7 @@ pub fn report(update_data: HashMap<String, Value>, endpoint: &str) -> String {
         HeaderName::from_static("content-type"),
         HeaderValue::from_static("application/json"),
     );
-    
+
     headers.insert(
         HeaderName::from_static("user-agent"),
         HeaderValue::from_static("Mozilla/5.0 (Windows NT 10.0; Win64; x64; TokaiTeio) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/114.0.0.1 Safari/537.36 Edg/114.0.1823.82 iykrzu/114.514"),

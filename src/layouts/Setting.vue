@@ -2,6 +2,7 @@
 import { invoke } from "@tauri-apps/api/core";
 import { onMounted, ref } from "vue";
 
+const toast = useToast();
 const config = ref({
 	server_config: {
 		endpoint: "",
@@ -32,36 +33,36 @@ const removeRule = (index) => {
 const toggleRule = (index) => {
 	config.value.rules[index].collapsed = !config.value.rules[index].collapsed;
 };
-const showToast = (message) => {
-	const toastContainer = document.getElementById("toast-container");
-	const toast = document.createElement("div");
-	toast.className = "alert alert-success fade-in";
-	toast.innerContent = message;
-	toastContainer.appendChild(toast);
-	setTimeout(() => {
-		toast.classList.add("fade-out");
-		toast.addEventListener("animationend", () => {
-			toast.remove();
-		});
-	}, 3000);
-};
 
 const saveConfig = async () => {
-	try {
-		await invoke("save_config", { config: JSON.stringify(config.value) });
-		showToast("配置已保存");
-	}
-	catch (error) {
-		console.error("保存配置时出错:", error);
-	}
+    try {
+        await invoke("save_config", { config: JSON.stringify(config.value) });
+        toast.add({
+            id: 'save_config',
+            title: '保存成功',
+            description: '配置已成功保存',
+            icon: 'i-mingcute-check-line',
+            timeout: 3000
+        });
+    }
+    catch (error) {
+        console.error("保存配置时出错:", error);
+        toast.add({
+            id: 'save_config_error',
+            title: '保存失败',
+            description: error.toString(),
+            icon: 'i-mingcute-close-line',
+            timeout: 3000
+        });
+    }
 };
 </script>
 
 <template>
-	<div class="flex items-center justify-center min-h-screen min-w-screen bg-base-200 lg:ml-60">
-		<div class="card p-6 max-w-lg mx-auto w-full shadow-2xl bg-base-100">
+	<div class="min-w-screen bg-base-200 flex min-h-screen items-center justify-center lg:ml-60">
+		<div class="card bg-base-100 mx-auto w-full max-w-lg p-6 shadow-2xl">
 			<div class="card-body">
-				<h1 class="card-title text-2xl font-bold mb-4">
+				<h1 class="card-title mb-4 text-2xl font-bold">
 					设置
 				</h1>
 				<form @submit.prevent="saveConfig">
@@ -93,7 +94,7 @@ const saveConfig = async () => {
 						>
 					</div>
 					<div v-for="(rule, index) in config.rules" :key="index" class="form-control mb-4">
-						<div class="flex justify-between items-center">
+						<div class="flex items-center justify-between">
 							<span>规则 {{ rule.match_application }}</span>
 							<button type="button" class="btn btn-sm" @click="toggleRule(index)">
 								{{ rule.collapsed ? '展开' : '折叠' }}

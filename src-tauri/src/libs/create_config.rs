@@ -25,16 +25,20 @@ pub fn create_config_file() -> std::io::Result<()> {
     use std::path::Path;
 
     let config_file = if cfg!(dev) {
-        Path::new("..").join("config.yml").to_str().unwrap().to_string()
+        Path::new("..")
+            .join("config.yml")
+            .to_str()
+            .unwrap()
+            .to_string()
     } else {
         "config.yml".to_string()
     };
-    
+
     // 检查文件是否存在
     if !fs::metadata(&config_file).is_ok() {
         let mut file = fs::File::create(&config_file)?;
         file.write_all(DEFAULT_CONFIG.as_bytes())?;
     }
-    
+
     Ok(())
 }

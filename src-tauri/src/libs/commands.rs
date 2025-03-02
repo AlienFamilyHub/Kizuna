@@ -46,8 +46,7 @@ pub fn open_log_directory() {
 #[tauri::command]
 pub fn save_config(config: String) {
     let config: MainConfig = serde_json::from_str(&config).unwrap();
-    let config_path = std::env::current_dir().unwrap().join(
-    if cfg!(dev) {
+    let config_path = std::env::current_dir().unwrap().join(if cfg!(dev) {
         "../config.yml"
     } else {
         "/config.yml"

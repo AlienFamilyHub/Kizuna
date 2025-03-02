@@ -16,7 +16,12 @@ export default defineNuxtConfig({
 			strictPort: true,
 		},
 	},
-
+	ui: {
+		// @ts-ignore - 忽略类型检查
+		notifications: {
+			position: 'top-0 bottom-[unset]'
+		}
+	},
 	ssr: false,
 	postcss: {
 		plugins: {
@@ -24,5 +29,5 @@ export default defineNuxtConfig({
 			autoprefixer: {},
 		},
 	},
-	modules: ["@pinia/nuxt", "@nuxt/icon"],
+	modules: ["@pinia/nuxt", "@nuxt/icon", "@nuxt/ui"],
 });

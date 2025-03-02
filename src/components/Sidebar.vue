@@ -1,6 +1,6 @@
 <script setup lang="ts">
 import { invoke } from "@tauri-apps/api/core";
-import { open } from "@tauri-apps/plugin-shell";
+import { openUrl } from '@tauri-apps/plugin-opener';
 import { onMounted, ref } from "vue";
 import Avatar from "./Avatar.vue";
 
@@ -36,7 +36,12 @@ const sections = [
 ];
 
 const openInBrowser = async (url: string) => {
-	await open(url);
+	console.log("Opening URL:", url);
+    try {
+        await openUrl(url);
+    } catch (error) {
+        console.error("Failed to open URL:", error);
+    }
 };
 </script>
 
@@ -45,36 +50,36 @@ const openInBrowser = async (url: string) => {
 		<input id="my-drawer" type="checkbox" class="drawer-toggle">
 		<div class="drawer-content">
 			<label for="my-drawer" class="drawer-button lg:hidden">
-				<Icon name="solar:sidebar-code-bold" class="w-8 h-8 m-4" />
+				<Icon name="solar:sidebar-code-bold" class="m-4 size-8" />
 			</label>
 			<slot />
 		</div>
 		<div class="drawer-side">
 			<label for="my-drawer" aria-label="close sidebar" class="drawer-overlay" />
 			<aside
-				class="bg-gray-100 max-w-60 w-60 h-screen p-4 flex flex-col justify-between border-r border-gray-300 fixed top-0 left-0 z-50 dark:bg-gray-800 dark:border-gray-950 md:flex"
+				class="fixed left-0 top-0 z-50 flex h-screen w-60 max-w-60 flex-col justify-between border-r border-gray-300 bg-gray-100 p-4 md:flex dark:border-gray-950 dark:bg-gray-800"
 			>
 				<div>
 					<div class="flex flex-col items-center">
-						<div class="text-base font-bold mb-4 flex items-center">
-							<Avatar class="w-10 h-10 mr-2" />
+						<div class="mb-4 flex items-center text-base font-bold">
+							<Avatar class="mr-2 size-10" />
 							Kizuna
 						</div>
-						<div class="w-full lg:w-56 max-w-56">
-							<ul class="menu rounded-[1rem] text-base bg-base-200 w-full">
+						<div class="w-full max-w-56 lg:w-56">
+							<ul class="menu bg-base-200 w-full rounded-2xl text-base">
 								<li v-for="(item, index) in sections" :key="index" class="mb-2">
 									<router-link
 										:to="item.path" :class="{ active: $route.path === item.path }"
-										class="mb-2 flex items-center w-full"
+										class="mb-2 flex w-full items-center"
 									>
-										<Icon :name="item.icon" class="w-6 h-6 mr-2" /> {{ item.name }}
+										<Icon :name="item.icon" class="mr-2 size-6" /> {{ item.name }}
 									</router-link>
 								</li>
 							</ul>
 						</div>
 					</div>
 				</div>
-				<div class="text-center mt-4 text-sm lg:text-base">
+				<div class="mt-4 text-center text-sm lg:text-base">
 					<div class="divider mb-2" />
 					© {{ curYear }} <a
 						class="text-blue-500 hover:text-blue-700 dark:text-blue-300 dark:hover:text-blue-500"

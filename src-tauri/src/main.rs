@@ -9,10 +9,9 @@ use libs::commands::{get_config, get_version, open_log_directory, save_config, s
 use libs::create_config::create_config_file;
 
 use tauri::{
-    Manager, 
     menu::{Menu, MenuItem},
     tray::TrayIconBuilder,
-    WindowEvent,
+    Manager, WindowEvent,
 };
 
 const VERSION: &str = "0.0.2";
@@ -23,6 +22,7 @@ pub fn main() {
     create_config_file().expect("Failed to create config.yml");
 
     tauri::Builder::default()
+        .plugin(tauri_plugin_opener::init())
         .setup(|app| {
             let main_window = app.get_webview_window("main").unwrap();
             let main_window_clone = main_window.clone();
@@ -33,34 +33,37 @@ pub fn main() {
                 }
                 _ => {}
             });
-            
+
             // 创建托盘菜单
-            let tray_menu = Menu::with_items(app, &[
-                &MenuItem::with_id(app, "show", "显示窗口", true, None::<&str>)?,
-                &MenuItem::with_id(app, "hide", "隐藏窗口", true, None::<&str>)?,
-                &MenuItem::with_id(app, "quit", "退出", true, None::<&str>)?,
-            ])?;
+            let tray_menu = Menu::with_items(
+                app,
+                &[
+                    &MenuItem::with_id(app, "show", "显示窗口", true, None::<&str>)?,
+                    &MenuItem::with_id(app, "hide", "隐藏窗口", true, None::<&str>)?,
+                    &MenuItem::with_id(app, "quit", "退出", true, None::<&str>)?,
+                ],
+            )?;
             // 添加托盘图标及其事件逻辑
             TrayIconBuilder::new()
-            .icon(app.default_window_icon().unwrap().clone())
-            .menu(&tray_menu)
-            .tooltip("KizunaBaka")
-            .on_menu_event(|app, event| match event.id.0.as_str() {
-                "show" => {
-                    let main_window = app.get_webview_window("main").unwrap();
-                    main_window.show().unwrap();
-                    main_window.set_focus().unwrap();
-                }
-                "hide" => {
-                    let main_window = app.get_webview_window("main").unwrap();
-                    main_window.hide().unwrap();
-                }
-                "quit" => {
-                    app.exit(0); // 退出应用程序
-                }
-                _ => {}
-            })
-            .build(app)?;
+                .icon(app.default_window_icon().unwrap().clone())
+                .menu(&tray_menu)
+                .tooltip("KizunaBaka")
+                .on_menu_event(|app, event| match event.id.0.as_str() {
+                    "show" => {
+                        let main_window = app.get_webview_window("main").unwrap();
+                        main_window.show().unwrap();
+                        main_window.set_focus().unwrap();
+                    }
+                    "hide" => {
+                        let main_window = app.get_webview_window("main").unwrap();
+                        main_window.hide().unwrap();
+                    }
+                    "quit" => {
+                        app.exit(0); // 退出应用程序
+                    }
+                    _ => {}
+                })
+                .build(app)?;
 
             Ok(())
         })

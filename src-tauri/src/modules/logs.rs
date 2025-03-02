@@ -1,9 +1,9 @@
 use chrono::Local;
+use once_cell::sync::Lazy;
 use std::fs::{create_dir_all, OpenOptions};
 use std::io::{BufWriter, Write};
-use std::sync::Mutex;
 use std::path::Path;
-use once_cell::sync::Lazy;
+use std::sync::Mutex;
 
 static LOG_WRITER: Lazy<Mutex<BufWriter<std::fs::File>>> = Lazy::new(|| {
     let now = Local::now();
@@ -36,7 +36,9 @@ pub fn log_message(level: &str, message: &str) -> String {
 
     {
         let mut writer = LOG_WRITER.lock().unwrap(); // 获取锁，确保线程安全
-        writer.write_all(log_entry.as_bytes()).expect("无法写入日志文件"); // 写入日志
+        writer
+            .write_all(log_entry.as_bytes())
+            .expect("无法写入日志文件"); // 写入日志
         writer.flush().expect("无法刷新日志内容"); // 刷新缓冲区
     }
 

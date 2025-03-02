@@ -3,6 +3,7 @@ import { invoke } from "@tauri-apps/api/core";
 import { computed, ref, watchEffect } from "vue";
 import { useLogsStore } from "../stores/logsStore";
 
+const toast = useToast();
 const logsStore = useLogsStore();
 const logs = computed(() => logsStore.logs);
 
@@ -21,12 +22,19 @@ watchEffect(() => {
 
 const openLogDirectory = () => {
 	invoke("open_log_directory");
+	toast.add({
+		id: 'open_log_directory',
+		title: '日志目录已打开',
+		description: '已在文件管理器中打开日志目录',
+		icon: 'i-mingcute-folder-open-line',
+		timeout: 3000
+	})
 };
 </script>
 
 <template>
 	<div class="p-4">
-		<div class="flex justify-between items-center mb-4">
+		<div class="mb-4 flex items-center justify-between">
 			<h1 class="text-2xl font-bold dark:text-white">
 				Logs
 			</h1>
@@ -34,8 +42,8 @@ const openLogDirectory = () => {
 				日志目录
 			</button>
 		</div>
-		<div ref="logContainer" class="bg-gray-100 dark:bg-gray-800 p-4 rounded-lg overflow-y-auto h-80">
-			<p v-for="(log, index) in logs" :key="index" class="text-sm text-gray-800 dark:text-gray-200 mb-1">
+		<div ref="logContainer" class="h-80 overflow-y-auto rounded-lg bg-gray-100 p-4 dark:bg-gray-800">
+			<p v-for="(log, index) in logs" :key="index" class="mb-1 text-sm text-gray-800 dark:text-gray-200">
 				{{ log }}
 			</p>
 		</div>

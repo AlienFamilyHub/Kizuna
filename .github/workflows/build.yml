@@ -21,7 +21,7 @@ jobs:
 
       - name: Rust setup # 设置 Rust
         uses: dtolnay/rust-toolchain@stable
-      
+
       - name: Node setup # 设置 Node
         uses: actions/setup-node@v4
         with:
@@ -52,7 +52,7 @@ jobs:
       - name: Rust cache # Rust 缓存
         uses: swatinem/rust-cache@v2
         with:
-          workspaces: "./src-tauri -> target"
+          workspaces: ./src-tauri -> target
 
       - name: Cache Tauri build artifacts # 缓存 Tauri 构建工件
         uses: actions/cache@v4
@@ -70,7 +70,7 @@ jobs:
           GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
         with:
           tagName: ${{ github.ref_name }}
-          releaseName: "__VERSION__"
+          releaseName: __VERSION__
           releaseBody: "Built by GitHub Action, Kizuna v__VERSION__ based on Tauri"
           releaseDraft: true
           prerelease: false

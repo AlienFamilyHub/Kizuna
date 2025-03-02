@@ -12,7 +12,7 @@ pub fn report(
     String,
 ) {
     // 从 get_processes 模块获取当前前台进程名称和窗口名称以及icon_base64
-    let (process_name, window_name,icon_base64) = crate::modules::get_processes::get_window_info();
+    let (process_name, window_name, icon_base64) = crate::modules::get_processes::get_window_info();
 
     // 自定义程序名：从配置文件中读取规则，替换进程名
     let process_name = crate::modules::get_processes::replacer(&process_name.replace(".exe", ""));

@@ -27,23 +27,23 @@ function formatTimestamp(timestamp: number) {
 </script>
 
 <template>
-	<div class="min-h-screen min-w-screen bg-gray-100 flex items-center justify-center p-6">
-		<div class="w-full max-w-2xl bg-white shadow-lg rounded-lg overflow-hidden">
-			<div v-if="isLoading" class="p-8 space-y-6">
-				<div class="h-8 bg-gray-200 rounded-md w-3/4 animate-pulse" />
-				<div class="h-6 bg-gray-200 rounded-md w-1/2 animate-pulse" />
-				<div class="h-32 bg-gray-200 rounded-md w-full animate-pulse" />
+	<div class="min-w-screen flex min-h-screen items-center justify-center bg-gray-100 p-6 dark:bg-gray-900">
+		<div class="w-full max-w-2xl overflow-hidden rounded-lg bg-white shadow-lg dark:bg-gray-800">
+			<div v-if="isLoading" class="space-y-6 p-8">
+				<div class="h-8 w-3/4 animate-pulse rounded-md bg-gray-200 dark:bg-gray-700" />
+				<div class="h-6 w-1/2 animate-pulse rounded-md bg-gray-200 dark:bg-gray-700" />
+				<div class="h-32 w-full animate-pulse rounded-md bg-gray-200 dark:bg-gray-700" />
 			</div>
-			<div v-else class="divide-y divide-gray-200">
+			<div v-else class="divide-y divide-gray-200 dark:divide-gray-700">
 				<!-- Program Info -->
-				<div class="p-8 space-y-4">
+				<div class="space-y-4 p-8">
 					<div class="flex items-center space-x-6">
-						<img v-if="eventData.icon" :src="`data:image/png;base64,${eventData.icon}`" alt="Program Icon" class="w-16 h-16 rounded-md">
+						<img v-if="eventData.icon" :src="`data:image/png;base64,${eventData.icon}`" alt="Program Icon" class="size-16 rounded-md">
 						<div>
-							<h1 class="text-3xl font-light text-gray-900 mb-1">
+							<h1 class="mb-1 text-3xl font-light text-gray-900 dark:text-gray-100">
 								{{ eventData.data?.window_name }}
 							</h1>
-							<p class="text-lg text-gray-600 font-light">
+							<p class="text-lg font-light text-gray-600 dark:text-gray-400">
 								{{ eventData.data?.process }}
 							</p>
 						</div>
@@ -51,35 +51,35 @@ function formatTimestamp(timestamp: number) {
 				</div>
 
 				<!-- Media Info -->
-				<div v-if="eventData.data?.media" class="p-8 space-y-6">
+				<div v-if="eventData.data?.media" class="space-y-6 p-8">
 					<div class="flex items-start space-x-6">
 						<img
 							v-if="eventData.AlbumThumbnail" :src="`data:image/png;base64,${eventData.AlbumThumbnail}`"
-							alt="Album Thumbnail" class="w-32 h-32 object-cover rounded-md"
+							alt="Album Thumbnail" class="size-32 rounded-md object-cover"
 						>
 						<div class="flex-1 space-y-3">
-							<h2 class="text-2xl font-medium text-gray-900">
+							<h2 class="text-2xl font-medium text-gray-900 dark:text-gray-100">
 								{{ eventData.data.media.title }}
 							</h2>
-							<p v-if="eventData.data.media.artist" class="text-xl text-gray-700 font-light">
+							<p v-if="eventData.data.media.artist" class="text-xl font-light text-gray-700 dark:text-gray-300">
 								{{ eventData.data.media.artist }}
 							</p>
-							<p v-if="eventData.data.media.AlbumTitle" class="text-lg text-gray-600 font-light">
+							<p v-if="eventData.data.media.AlbumTitle" class="text-lg font-light text-gray-600 dark:text-gray-400">
 								{{ eventData.data.media.AlbumTitle }}
 							</p>
-							<p v-if="eventData.data.media.AlbumArtist" class="text-md text-gray-500">
+							<p v-if="eventData.data.media.AlbumArtist" class="text-md text-gray-500 dark:text-gray-500">
 								{{ eventData.data.media.AlbumArtist }}
 							</p>
 						</div>
 					</div>
-					<p v-if="eventData.data.media.SourceAppName" class="text-sm text-gray-400 uppercase tracking-wide">
+					<p v-if="eventData.data.media.SourceAppName" class="text-sm uppercase tracking-wide text-gray-400 dark:text-gray-500">
 						{{ eventData.data.media.SourceAppName }}
 					</p>
 				</div>
 
 				<!-- Timestamp -->
-				<div class="p-4 bg-gray-50">
-					<p class="text-sm text-gray-400">
+				<div class="bg-gray-50 p-4 dark:bg-gray-900">
+					<p class="text-sm text-gray-400 dark:text-gray-500">
 						更新时间: {{ formatTimestamp(eventData.data?.timestamp) }}
 					</p>
 				</div>

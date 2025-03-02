@@ -6,7 +6,6 @@ pub mod windows {
     use tokio::runtime::Runtime;
     use windows::core::Result;
     use windows::core::HSTRING;
-    use windows::Foundation::IAsyncOperation;
     use windows::Media::Control::{
         GlobalSystemMediaTransportControlsSessionManager,
         GlobalSystemMediaTransportControlsSessionPlaybackInfo,
@@ -14,7 +13,7 @@ pub mod windows {
     use windows::Storage::Streams::DataReader;
     pub fn get_media_info() -> (String, String, String, String, String, String) {
         let rt = Runtime::new().expect("Failed to create Tokio runtime");
-    
+
         match rt.block_on(async_main()) {
             Ok(info) => info,
             Err(e) => {
@@ -30,14 +29,11 @@ pub mod windows {
             }
         }
     }
-    
+
     async fn async_main() -> Result<(String, String, String, String, String, String)> {
-        let session_manager_operation: IAsyncOperation<
-            GlobalSystemMediaTransportControlsSessionManager,
-        > = GlobalSystemMediaTransportControlsSessionManager::RequestAsync()?;
-        let session_manager = session_manager_operation.get()?;
+        let session_manager = GlobalSystemMediaTransportControlsSessionManager::RequestAsync()?.get()?;
         let current_session = session_manager.GetCurrentSession()?;
-    
+
         // 获取播放信息
         let playback_info: GlobalSystemMediaTransportControlsSessionPlaybackInfo =
             current_session.GetPlaybackInfo()?;
@@ -55,19 +51,19 @@ pub mod windows {
                 "".to_string(),
             ));
         }
-    
+
         // 获取媒体属性
         let media_properties_operation = current_session.TryGetMediaPropertiesAsync()?;
         let media_properties = media_properties_operation.get()?;
-    
+
         let source_app_name_hstring: HSTRING = current_session.SourceAppUserModelId()?.into();
         let title_hstring: HSTRING = media_properties.Title()?.into();
         let artist_hstring: HSTRING = media_properties.Artist()?.into();
         let album_title_hstring: HSTRING = media_properties.AlbumTitle()?.into();
         let album_artist_hstring: HSTRING = media_properties.AlbumArtist()?.into();
-    
+
         let mut album_thumbnail = "".to_string();
-    
+
         // 获取缩略图
         let thumbnail_ref = media_properties.Thumbnail()?;
         let thumbnail_stream = thumbnail_ref.OpenReadAsync()?.get()?;
@@ -81,19 +77,19 @@ pub mod windows {
             // 读取字节数据
             let mut thumbnail_data = vec![0u8; stream_size_u32 as usize];
             data_reader.ReadBytes(&mut thumbnail_data)?;
-    
+
             // 将缩略图数据编码为 Base64
             album_thumbnail = base64::engine::general_purpose::STANDARD.encode(&thumbnail_data);
-    
+
             // 保存本地缓存
             let cache_path = crate::libs::cache::get_cache_directory();
             let cache_file_path = cache_path.join("album_thumbnail.png");
-    
+
             // 写入文件
             let mut file = File::create(&cache_file_path)?;
             file.write_all(&thumbnail_data)?;
         }
-    
+
         Ok((
             title_hstring.to_string_lossy().to_owned(),
             artist_hstring.to_string_lossy().to_owned(),
@@ -102,5 +98,5 @@ pub mod windows {
             album_artist_hstring.to_string_lossy().to_owned(),
             album_thumbnail,
         ))
-    }    
+    }
 }
