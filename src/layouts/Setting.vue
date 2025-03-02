@@ -58,7 +58,7 @@ const saveConfig = async () => {
 </script>
 
 <template>
-	<div class="flex min-h-screen min-w-full items-center justify-center bg-base-200 lg:ml-60">
+	<div class="flex min-h-screen items-center justify-center bg-base-200 lg:ml-60">
 		<div class="card mx-auto w-full max-w-lg bg-base-100 p-6 shadow-2xl">
 			<div class="card-body">
 				<h1 class="card-title mb-4 text-2xl font-bold">
