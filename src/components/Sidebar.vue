@@ -11,8 +11,7 @@ onMounted(async () => {
 	try {
 		const version = await invoke("get_version");
 		backend_version.value = version as string;
-	}
-	catch (error) {
+	} catch (error) {
 		console.error("Failed to get version:", error);
 	}
 });
@@ -38,8 +37,7 @@ const sections = [
 const openInBrowser = async (url: string) => {
 	try {
 		await openUrl(url);
-	}
-	catch (error) {
+	} catch (error) {
 		console.error("Failed to open URL:", error);
 	}
 };
