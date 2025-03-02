@@ -1,6 +1,6 @@
 <script setup lang="ts">
 import { invoke } from "@tauri-apps/api/core";
-import { openUrl } from '@tauri-apps/plugin-opener';
+import { openUrl } from "@tauri-apps/plugin-opener";
 import { onMounted, ref } from "vue";
 import Avatar from "./Avatar.vue";
 
@@ -36,12 +36,12 @@ const sections = [
 ];
 
 const openInBrowser = async (url: string) => {
-	console.log("Opening URL:", url);
-    try {
-        await openUrl(url);
-    } catch (error) {
-        console.error("Failed to open URL:", error);
-    }
+	try {
+		await openUrl(url);
+	}
+	catch (error) {
+		console.error("Failed to open URL:", error);
+	}
 };
 </script>
 
@@ -66,7 +66,7 @@ const openInBrowser = async (url: string) => {
 							Kizuna
 						</div>
 						<div class="w-full max-w-56 lg:w-56">
-							<ul class="menu bg-base-200 w-full rounded-2xl text-base">
+							<ul class="menu w-full rounded-2xl bg-base-200 text-base">
 								<li v-for="(item, index) in sections" :key="index" class="mb-2">
 									<router-link
 										:to="item.path" :class="{ active: $route.path === item.path }"

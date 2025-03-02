@@ -35,32 +35,31 @@ const toggleRule = (index) => {
 };
 
 const saveConfig = async () => {
-    try {
-        await invoke("save_config", { config: JSON.stringify(config.value) });
-        toast.add({
-            id: 'save_config',
-            title: '保存成功',
-            description: '配置已成功保存',
-            icon: 'i-mingcute-check-line',
-            timeout: 3000
-        });
-    }
-    catch (error) {
-        console.error("保存配置时出错:", error);
-        toast.add({
-            id: 'save_config_error',
-            title: '保存失败',
-            description: error.toString(),
-            icon: 'i-mingcute-close-line',
-            timeout: 3000
-        });
-    }
+	try {
+		await invoke("save_config", { config: JSON.stringify(config.value) });
+		toast.add({
+			id: "save_config",
+			title: "保存成功",
+			description: "配置已成功保存",
+			icon: "i-mingcute-check-line",
+			timeout: 3000,
+		});
+	} catch (error) {
+		console.error("保存配置时出错:", error);
+		toast.add({
+			id: "save_config_error",
+			title: "保存失败",
+			description: error.toString(),
+			icon: "i-mingcute-close-line",
+			timeout: 3000,
+		});
+	}
 };
 </script>
 
 <template>
-	<div class="min-w-screen bg-base-200 flex min-h-screen items-center justify-center lg:ml-60">
-		<div class="card bg-base-100 mx-auto w-full max-w-lg p-6 shadow-2xl">
+	<div class="flex min-h-screen min-w-full items-center justify-center bg-base-200 lg:ml-60">
+		<div class="card mx-auto w-full max-w-lg bg-base-100 p-6 shadow-2xl">
 			<div class="card-body">
 				<h1 class="card-title mb-4 text-2xl font-bold">
 					设置
@@ -143,36 +142,4 @@ const saveConfig = async () => {
 			</div>
 		</div>
 	</div>
-	<!-- Toast 容器 -->
-	<div id="toast-container" class="toast toast-top toast-end" />
 </template>
-
-<style>
-@keyframes fadeIn {
-	from {
-		opacity: 0;
-	}
-
-	to {
-		opacity: 1;
-	}
-}
-
-@keyframes fadeOut {
-	from {
-		opacity: 1;
-	}
-
-	to {
-		opacity: 0;
-	}
-}
-
-.fade-in {
-	animation: fadeIn 0.5s forwards;
-}
-
-.fade-out {
-	animation: fadeOut 0.5s forwards;
-}
-</style>

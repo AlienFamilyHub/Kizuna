@@ -23,12 +23,12 @@ watchEffect(() => {
 const openLogDirectory = () => {
 	invoke("open_log_directory");
 	toast.add({
-		id: 'open_log_directory',
-		title: '日志目录已打开',
-		description: '已在文件管理器中打开日志目录',
-		icon: 'i-mingcute-folder-open-line',
-		timeout: 3000
-	})
+		id: "open_log_directory",
+		title: "日志目录已打开",
+		description: "已在文件管理器中打开日志目录",
+		icon: "i-mingcute-folder-open-line",
+		timeout: 3000,
+	});
 };
 </script>
 

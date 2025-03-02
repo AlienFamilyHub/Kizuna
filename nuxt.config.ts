@@ -17,10 +17,10 @@ export default defineNuxtConfig({
 		},
 	},
 	ui: {
-		// @ts-ignore - 忽略类型检查
+		// @ts-expect-error - 忽略类型检查
 		notifications: {
-			position: 'top-0 bottom-[unset]'
-		}
+			position: "top-0 bottom-[unset]",
+		},
 	},
 	ssr: false,
 	postcss: {
