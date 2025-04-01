@@ -35,7 +35,7 @@ tauri-plugin-shell = "2"
 tokio = { version = "1.0", features = [ "full" ] }
 serde_yaml = "0.9.33"
 serde_derive = "1.0.218"
-reqwest = { version = "0.12.5", features = [
+reqwest = { version = "0.12.15", features = [
   "blocking",
   "json"
 ] }
