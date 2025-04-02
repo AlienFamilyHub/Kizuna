@@ -18,7 +18,7 @@
 		"@pinia/nuxt": "0.10.1",
 		"@tauri-apps/api": "^2.4.0",
 		"@tauri-apps/plugin-opener": "^2.2.6",
-		"@tauri-apps/plugin-shell": "^2.2.0",
+		"@tauri-apps/plugin-shell": "^2.2.1",
 		"@types/eslint-plugin-tailwindcss": "^3.17.0",
 		"eslint-plugin-tailwindcss": "^3.18.0",
 		"nuxt": "^3.16.1",
