@@ -1,8 +1,8 @@
 [package]
 name = "kizuna"
 version = "0.1.0"
-description = "A Tauri App"
-authors = [ "you" ]
+description = "Kizuna"
+authors = [ "TiaNXianG" ]
 edition = "2021"
 
 [lib]
