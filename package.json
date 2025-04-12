@@ -22,7 +22,7 @@
 		"@types/eslint-plugin-tailwindcss": "^3.17.0",
 		"eslint-plugin-tailwindcss": "^3.18.0",
 		"nuxt": "^3.16.1",
-		"pinia": "^3.0.1",
+		"pinia": "^3.0.2",
 		"vue": "3.5.13",
 		"vue-router": "4.5.0"
 	},
