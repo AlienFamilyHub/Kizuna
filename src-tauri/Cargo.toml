@@ -14,7 +14,7 @@ crate-type = [
 ]
 
 [build-dependencies]
-tauri-build = { version = "2", features = [] }
+tauri-build = { version = "2.1.1", features = [] }
 
 [features]
 cargo-clippy = []
