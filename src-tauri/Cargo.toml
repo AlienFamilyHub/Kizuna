@@ -50,6 +50,7 @@ log = "0.4.27"
 env_logger = "0.11.8"
 regex = "1.11.1"
 lazy_static = "1.5.0"
+tauri-utils = "2.3.1"
 
 # windows-only dependencies
 [target.'cfg(windows)'.dependencies]

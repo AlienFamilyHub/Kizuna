@@ -2463,6 +2463,7 @@ dependencies = [
  "tauri-build",
  "tauri-plugin-opener",
  "tauri-plugin-shell",
+ "tauri-utils",
  "tokio",
  "winapi",
  "windows 0.61.1",
