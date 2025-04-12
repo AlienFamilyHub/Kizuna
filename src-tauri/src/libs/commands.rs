@@ -9,6 +9,7 @@ pub fn start(app_handle: AppHandle<Wry>) {
     let endpoint = config.server_config.endpoint.clone();
     let token = config.server_config.token.clone();
     let report_time = std::time::Duration::from_secs(config.server_config.report_time as u64);
+    crate::modules::logs::init_logger();
 
     std::thread::spawn(move || loop {
         std::thread::sleep(report_time);
@@ -44,7 +45,7 @@ pub fn open_log_directory() {
 }
 
 #[tauri::command]
-pub fn save_config(config: String) {
+pub fn save_config(config: String, app_handle: AppHandle<Wry>) {
     let config: MainConfig = serde_json::from_str(&config).unwrap();
     let config_path = std::env::current_dir().unwrap().join(if cfg!(dev) {
         "../config.yml"
@@ -53,6 +54,10 @@ pub fn save_config(config: String) {
     });
     let config_data = serde_yaml::to_string(&config).unwrap();
     std::fs::write(config_path, config_data).unwrap();
+
+    app_handle.emit("config-updated", ()).unwrap_or_else(|e| {
+        eprintln!("Failed to emit config-updated event: {}", e);
+    });
 }
 
 #[tauri::command]

@@ -8,6 +8,11 @@ const eventData = computed(() => eventStore.eventData);
 const isLoading = ref(true);
 
 onMounted(async () => {
+	// 检查eventStore中是否已有数据，如果有则立即显示
+	if (Object.keys(eventStore.eventData).length > 0) {
+		isLoading.value = false;
+	}
+
 	const unlisten = await listen("home-event", (event) => {
 		eventStore.setEventData(event.payload as ReturnData);
 		isLoading.value = false;
@@ -54,7 +59,7 @@ function formatTimestamp(timestamp: number) {
 				<div v-if="eventData.data?.media" class="space-y-6 p-8">
 					<div class="flex items-start space-x-6">
 						<img
-							v-if="eventData.AlbumThumbnail" :src="`data:image/png;base64,${eventData.AlbumThumbnail}`"
+							v-if="eventData.AlbumThumbnail" :src="eventData.AlbumThumbnail"
 							alt="Album Thumbnail" class="size-32 rounded-md object-cover"
 						>
 						<div class="flex-1 space-y-3">

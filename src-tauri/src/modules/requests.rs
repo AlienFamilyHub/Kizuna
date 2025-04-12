@@ -78,17 +78,30 @@ pub fn report(update_data: HashMap<String, Value>, endpoint: &str) -> String {
         .send();
 
     match response {
-        Ok(resp) => match resp.json::<HashMap<String, Value>>() {
-            Ok(mut json) => {
-                // 打印媒体字段（如果存在）
-                if let Some(media_value) = media {
-                    json.insert("media".to_string(), media_value.clone());
+        Ok(resp) => {
+            let status = resp.status();
+            
+            match resp.text() {
+                Ok(text) => {
+                    if text.trim().is_empty() {
+                        return format!("API 响应：空响应 (状态码: {})", status);
+                    }
+                    
+                    match serde_json::from_str::<HashMap<String, Value>>(&text) {
+                        Ok(mut json) => {
+                            if let Some(media_value) = media {
+                                json.insert("media".to_string(), media_value.clone());
+                            }
+                            return format!("API 响应：{:?}", json);
+                        }
+                        Err(e) => {
+                            return format!("解析响应时出错：{}，原始响应：{}", e, text);
+                        }
+                    }
                 }
-                // 打印最终的JSON响应
-                return format!("API 响应：{:?}", json);
+                Err(e) => return format!("读取响应内容时出错：{}", e),
             }
-            Err(e) => return format!("解析响应时出错：{}", e),
-        },
+        }
         Err(e) => return format!("发送请求时出错：{}，详细信息：{:?}", e, e),
     }
 }

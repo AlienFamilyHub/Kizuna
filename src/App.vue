@@ -12,7 +12,8 @@ let unlisten: Promise<() => void>;
 onMounted(() => {
 	invoke("start");
 	unlisten = listen("log-event", (event) => {
-		logsStore.addLog(event.payload as string);
+		const processedPayload = (event.payload as string).replace(/data:image\/[^;]+;base64,[a-zA-Z0-9+/]+=*/g, "[BASE64_IMAGE]");
+		logsStore.addLog(processedPayload);
 	});
 });
 

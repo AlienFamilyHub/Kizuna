@@ -11,3 +11,5 @@ pub mod logs;
 pub mod icon_converter;
 
 pub mod get_media;
+
+pub mod upload_cover;

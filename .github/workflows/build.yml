@@ -30,7 +30,7 @@ jobs:
       - name: Setup pnpm # 设置 pnpm
         uses: pnpm/action-setup@v4
         with:
-          # version: 0.0.0 # 已有packageManager不选 
+          # version: 0.0.0 # 已有packageManager不选
           run_install: false
 
       - name: Get pnpm store directory

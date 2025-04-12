@@ -8,9 +8,24 @@ const config = ref({
 		endpoint: "",
 		token: "",
 		report_time: 0,
+		report_smtc: true,
+		skip_smtc_cover: false,
+		upload_smtc_cover: false,
+		log_base64: false,
+		s3_config: {
+			s3_enable: false,
+			bucket_url: "",
+			endpoint: "",
+			region: "",
+			bucket_name: "",
+			access_key: "",
+			secret_key: "",
+			custom_url: "",
+		},
 	},
 	rules: [],
 });
+
 onMounted(async () => {
 	const response = await invoke("get_config");
 	config.value = JSON.parse(response);
@@ -91,6 +106,118 @@ const saveConfig = async () => {
 							id="report_time" v-model.number="config.server_config.report_time"
 							class="input input-bordered w-full" type="number" placeholder="报告时间"
 						>
+					</div>
+					<div class="form-control mb-4">
+						<label class="label cursor-pointer">
+							<span class="label-text">上报SMTC信息</span>
+							<input v-model="config.server_config.report_smtc" type="checkbox" class="checkbox">
+						</label>
+					</div>
+					<div class="form-control mb-4">
+						<label class="label cursor-pointer">
+							<span class="label-text">是否跳过上报SMTC提供的音频封面</span>
+							<input v-model="config.server_config.skip_smtc_cover" type="checkbox" class="checkbox">
+						</label>
+					</div>
+					<div class="form-control mb-4">
+						<label class="label cursor-pointer">
+							<span class="label-text">是否将SMTC封面上传到第三方服务器</span>
+							<input v-model="config.server_config.upload_smtc_cover" type="checkbox" class="checkbox">
+						</label>
+					</div>
+
+					<div v-if="config.server_config.upload_smtc_cover" class="form-control mb-4">
+						<label class="label cursor-pointer">
+							<span class="label-text">启用S3功能</span>
+							<input v-model="config.server_config.s3_config.s3_enable" type="checkbox" class="checkbox">
+						</label>
+					</div>
+					<div v-if="config.server_config.upload_smtc_cover && config.server_config.s3_config.s3_enable" class="form-control mb-4">
+						<label class="label" for="s3_bucket_url">
+							<span class="label-text">S3桶URL</span>
+						</label>
+						<input
+							id="s3_bucket_url" v-model="config.server_config.s3_config.bucket_url"
+							class="input input-bordered w-full" type="text" placeholder="https://example.com"
+						>
+						<p class="mt-1 text-xs text-gray-500">
+							可设置自定义URL路径格式，支持变量：{year}年、{month}月、{day}日、{hash}哈希值等，例如：{S3桶URL}/images/{year}/{month}/{day}/{hash}.webp
+						</p>
+					</div>
+					<div v-if="config.server_config.upload_smtc_cover && config.server_config.s3_config.s3_enable" class="form-control mb-4">
+						<label class="label" for="s3_endpoint">
+							<span class="label-text">S3端点（可选）</span>
+						</label>
+						<input
+							id="s3_endpoint" v-model="config.server_config.s3_config.endpoint"
+							class="input input-bordered w-full" type="text" placeholder="https://s3.amazonaws.com"
+						>
+						<p class="mt-1 text-xs text-gray-500">
+							自定义S3端点，留空则使用标准AWS端点
+						</p>
+					</div>
+					<div v-if="config.server_config.upload_smtc_cover && config.server_config.s3_config.s3_enable" class="form-control mb-4">
+						<label class="label" for="s3_region">
+							<span class="label-text">S3区域（可选）</span>
+						</label>
+						<input
+							id="s3_region" v-model="config.server_config.s3_config.region"
+							class="input input-bordered w-full" type="text" placeholder="us-east-1"
+						>
+						<p class="mt-1 text-xs text-gray-500">
+							S3区域，如us-east-1、ap-northeast-1等，留空则使用默认区域
+						</p>
+					</div>
+					<div v-if="config.server_config.upload_smtc_cover && config.server_config.s3_config.s3_enable" class="form-control mb-4">
+						<label class="label" for="s3_bucket_name">
+							<span class="label-text">S3桶名称（可选）</span>
+						</label>
+						<input
+							id="s3_bucket_name" v-model="config.server_config.s3_config.bucket_name"
+							class="input input-bordered w-full" type="text" placeholder="my-bucket"
+						>
+						<p class="mt-1 text-xs text-gray-500">
+							S3桶名称，留空则尝试从桶URL中提取
+						</p>
+					</div>
+					<div v-if="config.server_config.upload_smtc_cover && config.server_config.s3_config.s3_enable" class="form-control mb-4">
+						<label class="label" for="s3_access_key">
+							<span class="label-text">S3访问密钥（可选）</span>
+						</label>
+						<input
+							id="s3_access_key" v-model="config.server_config.s3_config.access_key"
+							class="input input-bordered w-full" type="text" placeholder="S3 Access Key"
+						>
+					</div>
+					<div
+						v-if="config.server_config.upload_smtc_cover && config.server_config.s3_config.s3_enable && config.server_config.s3_config.access_key"
+						class="form-control mb-4"
+					>
+						<label class="label" for="s3_secret_key">
+							<span class="label-text">S3密钥（可选）</span>
+						</label>
+						<input
+							id="s3_secret_key" v-model="config.server_config.s3_config.secret_key"
+							class="input input-bordered w-full" type="password" placeholder="S3 Secret Key"
+						>
+					</div>
+					<div v-if="config.server_config.upload_smtc_cover && config.server_config.s3_config.s3_enable" class="form-control mb-4">
+						<label class="label" for="s3_custom_url">
+							<span class="label-text">自定义URL（可选）</span>
+						</label>
+						<input
+							id="s3_custom_url" v-model="config.server_config.s3_config.custom_url"
+							class="input input-bordered w-full" type="text" placeholder="https://custom.example.com"
+						>
+						<p class="mt-1 text-xs text-gray-500">
+							自定义访问URL，留空则使用标准S3 URL
+						</p>
+					</div>
+					<div class="form-control mb-4">
+						<label class="label cursor-pointer">
+							<span class="label-text">base64信息写入日志</span>
+							<input v-model="config.server_config.log_base64" type="checkbox" class="checkbox">
+						</label>
 					</div>
 					<div v-for="(rule, index) in config.rules" :key="index" class="form-control mb-4">
 						<div class="flex items-center justify-between">

@@ -1,52 +1,54 @@
 use chrono::Local;
-use once_cell::sync::Lazy;
-use std::fs::{create_dir_all, OpenOptions};
-use std::io::{BufWriter, Write};
+use log::{info, LevelFilter};
+use std::fs::create_dir_all;
+use std::io::Write;
 use std::path::Path;
-use std::sync::Mutex;
 
-static LOG_WRITER: Lazy<Mutex<BufWriter<std::fs::File>>> = Lazy::new(|| {
-    let now = Local::now();
-    let date_str = now.format("%Y-%m-%d").to_string();
+// 初始化日志系统
+pub fn init_logger() {
     let log_dir = if cfg!(dev) { "../logs" } else { "/logs" };
 
     if !Path::new(log_dir).exists() {
         create_dir_all(log_dir).expect("无法创建日志目录");
     }
 
+    let now = Local::now();
+    let date_str = now.format("%Y-%m-%d").to_string();
     let log_file_path = format!("{}/{}.log", log_dir, date_str);
 
-    let file = OpenOptions::new()
+    // 配置环境变量，如果没有设置则默认为 debug 级别
+    if std::env::var("RUST_LOG").is_err() {
+        std::env::set_var("RUST_LOG", "debug");
+    }
+
+    // 初始化日志记录器
+    let file = std::fs::OpenOptions::new()
         .create(true)
-        .append(true) // 确保每次写入时不会覆盖已有内容
+        .append(true)
         .open(log_file_path)
         .expect("无法打开日志文件");
 
-    Mutex::new(BufWriter::new(file))
-});
+    // 创建一个同时写入文件和标准输出的 logger
+    env_logger::Builder::from_default_env()
+        .format(|buf, record| {
+            writeln!(
+                buf,
+                "[{}] [{}] {}",
+                Local::now().format("%Y-%m-%d %H:%M:%S"),
+                record.level(),
+                record.args()
+            )
+        })
+        .filter(None, LevelFilter::Debug)
+        .target(env_logger::Target::Pipe(Box::new(file)))
+        .target(env_logger::Target::Stdout) // 添加标准输出目标
+        .write_style(env_logger::WriteStyle::Always)
+        .init();
 
-pub fn log_message(level: &str, message: &str) -> String {
-    let now = Local::now();
-    let log_entry = format!(
-        "[{}] [{}] {}\n",
-        now.format("%Y-%m-%d %H:%M:%S"),
-        level,
-        message
-    );
-
-    {
-        let mut writer = LOG_WRITER.lock().unwrap(); // 获取锁，确保线程安全
-        writer
-            .write_all(log_entry.as_bytes())
-            .expect("无法写入日志文件"); // 写入日志
-        writer.flush().expect("无法刷新日志内容"); // 刷新缓冲区
-    }
-
-    println!("{}", log_entry); // 控制台输出日志
-    log_entry
+    info!("日志系统初始化完成");
 }
 
-pub fn get_today_log() -> String {
+pub fn _get_today_log() -> String {
     let now = Local::now();
     let date_str = now.format("%Y-%m-%d").to_string();
     let log_dir = if cfg!(dev) { "../logs" } else { "/logs" };

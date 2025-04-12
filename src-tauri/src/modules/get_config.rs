@@ -3,10 +3,28 @@ use std::fs;
 use std::process::exit;
 
 #[derive(Debug, Deserialize, Serialize)]
+pub struct S3Config {
+    pub s3_enable: bool,
+    pub bucket_url: String,
+    pub endpoint: String,
+    pub region: String,
+    pub bucket_name: String,
+    pub access_key: String,
+    pub secret_key: String,
+    pub custom_url: String,
+}
+
+#[derive(Debug, Deserialize, Serialize)]
 pub struct ServerConfig {
     pub endpoint: String,
     pub token: String,
     pub report_time: i32,
+    pub report_smtc: bool,
+    pub skip_smtc_cover: bool,
+    pub upload_smtc_cover: bool,
+    pub log_base64: bool,
+    // S3配置
+    pub s3_config: S3Config,
 }
 
 #[derive(Debug, Deserialize, Serialize)]

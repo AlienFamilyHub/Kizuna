@@ -1,6 +1,6 @@
 <script setup lang="ts">
 import { invoke } from "@tauri-apps/api/core";
-import { computed, ref, watchEffect } from "vue";
+import { computed, nextTick, ref, watch } from "vue";
 import { useLogsStore } from "../stores/logsStore";
 
 const toast = useToast();
@@ -8,17 +8,19 @@ const logsStore = useLogsStore();
 const logs = computed(() => logsStore.logs);
 
 const logContainer = ref<HTMLElement | null>(null);
+const autoScroll = ref(true);
 
-const scrollToBottom = () => {
-	if (logContainer.value) {
-		// Type assertion: assert that `logContainer.value` is an HTMLElement
-		(logContainer.value as HTMLElement).scrollTop = (logContainer.value as HTMLElement).scrollHeight;
-	}
+const handleScroll = (event: Event) => {
+	const container = event.target as HTMLElement;
+	const isAtBottom = container.scrollTop + container.clientHeight >= container.scrollHeight - 50;
+	autoScroll.value = isAtBottom;
 };
 
-watchEffect(() => {
-	scrollToBottom();
-});
+const scrollToBottom = () => {
+	if (logContainer.value && autoScroll.value) {
+		logContainer.value.scrollTop = logContainer.value.scrollHeight;
+	}
+};
 
 const openLogDirectory = () => {
 	invoke("open_log_directory");
@@ -30,6 +32,23 @@ const openLogDirectory = () => {
 		timeout: 3000,
 	});
 };
+
+const clearLogs = () => {
+	logsStore.clearLogs();
+	toast.add({
+		id: "clear_logs",
+		title: "日志已清空",
+		description: "所有日志已被清除",
+		icon: "i-mingcute-delete-line",
+		timeout: 3000,
+	});
+};
+
+watch(logs, () => {
+	nextTick(() => {
+		scrollToBottom();
+	});
+}, { deep: true });
 </script>
 
 <template>
@@ -38,14 +57,27 @@ const openLogDirectory = () => {
 			<h1 class="text-2xl font-bold dark:text-white">
 				Logs
 			</h1>
-			<button class="btn btn-neutral dark:btn-primary dark:text-white" @click="openLogDirectory">
-				日志目录
-			</button>
+			<div class="flex gap-2">
+				<button class="btn btn-error" @click="clearLogs">
+					清空日志
+				</button>
+				<button class="btn btn-neutral dark:btn-primary dark:text-white" @click="openLogDirectory">
+					日志目录
+				</button>
+			</div>
 		</div>
-		<div ref="logContainer" class="h-80 overflow-y-auto rounded-lg bg-gray-100 p-4 dark:bg-gray-800">
-			<p v-for="(log, index) in logs" :key="index" class="mb-1 text-sm text-gray-800 dark:text-gray-200">
+		<div
+			ref="logContainer"
+			class="h-80 overflow-y-auto rounded-lg bg-gray-100 p-4 dark:bg-gray-800"
+			@scroll="handleScroll"
+		>
+			<div
+				v-for="(log, index) in logs"
+				:key="index"
+				class="mb-1 text-sm text-gray-800 dark:text-gray-200"
+			>
 				{{ log }}
-			</p>
+			</div>
 		</div>
 	</div>
 </template>
