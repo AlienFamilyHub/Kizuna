@@ -12,7 +12,7 @@ server_config:
   log_base64: false # 是否将base64的SMTC封面信息写入日志，默认判断条件：log_base64 && report_smtc && !skip_smtc_cover && !upload_smtc_cover
   s3_config:
     s3_enable: false # 是否启用S3功能
-    bucket_url: "" # 自定义URL路径，支持变量：{year}年、{month}月、{day}日、{hash}哈希值等
+    upload_path: "" # 自定义URL路径，支持变量：{year}年、{month}月、{day}日，仅能定制URL目录路径，暂且不支持对文件名进行定制
     endpoint: "" # S3端点
     region: "" # S3区域
     bucket_name: "" # S3桶名称

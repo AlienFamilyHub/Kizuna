@@ -14,7 +14,7 @@ const config = ref({
 		log_base64: false,
 		s3_config: {
 			s3_enable: false,
-			bucket_url: "",
+			upload_path: "",
 			endpoint: "",
 			region: "",
 			bucket_name: "",
@@ -133,15 +133,15 @@ const saveConfig = async () => {
 						</label>
 					</div>
 					<div v-if="config.server_config.upload_smtc_cover && config.server_config.s3_config.s3_enable" class="form-control mb-4">
-						<label class="label" for="s3_bucket_url">
+						<label class="label" for="s3_upload_path">
 							<span class="label-text">S3桶URL</span>
 						</label>
 						<input
-							id="s3_bucket_url" v-model="config.server_config.s3_config.bucket_url"
-							class="input input-bordered w-full" type="text" placeholder="https://example.com"
+							id="s3_upload_path" v-model="config.server_config.s3_config.upload_path"
+							class="input input-bordered w-full" type="text" placeholder="/cache/{year}/{month}/"
 						>
 						<p class="mt-1 text-xs text-gray-500">
-							可设置自定义URL路径格式，支持变量：{year}年、{month}月、{day}日、{hash}哈希值等，例如：{S3桶URL}/images/{year}/{month}/{day}/{hash}.webp
+							自定义URL路径，支持变量：{year}年、{month}月、{day}日，仅能定制URL目录路径，暂且不支持对文件名进行定制
 						</p>
 					</div>
 					<div v-if="config.server_config.upload_smtc_cover && config.server_config.s3_config.s3_enable" class="form-control mb-4">
@@ -190,7 +190,7 @@ const saveConfig = async () => {
 						>
 					</div>
 					<div
-						v-if="config.server_config.upload_smtc_cover && config.server_config.s3_config.s3_enable && config.server_config.s3_config.access_key"
+						v-if="config.server_config.upload_smtc_cover && config.server_config.s3_config.s3_enable"
 						class="form-control mb-4"
 					>
 						<label class="label" for="s3_secret_key">

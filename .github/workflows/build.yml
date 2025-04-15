@@ -25,7 +25,7 @@ jobs:
       - name: Node setup # 设置 Node
         uses: actions/setup-node@v4
         with:
-          node-version: "22" # 使用 Node.js 18 版本
+          node-version: "22"
 
       - name: Setup pnpm # 设置 pnpm
         uses: pnpm/action-setup@v4

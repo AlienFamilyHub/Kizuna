@@ -13,7 +13,7 @@ pub fn report(
     String,
     HashMap<String, Value>,
     String,
-    HashMap<String, String>,
+    HashMap<String, Value>,
     String,
 ) {
     // 获取配置
@@ -26,25 +26,25 @@ pub fn report(
     let process_name = crate::modules::get_processes::replacer(&process_name.replace(".exe", ""));
 
     // 获取媒体信息
-    let (title, artist, source_app_name, album_title, album_artist, album_thumbnail) =
+    let (title, artist, source_app_name, thumbnail, duration, elapsed_time) =
         crate::modules::get_media::get_media_info();
 
     // 构建媒体更新请求，根据配置决定是否包含封面信息
-    let album_thumbnail_to_use = if config.server_config.skip_smtc_cover {
+    let thumbnail_to_use = if config.server_config.skip_smtc_cover {
         // 如果配置为跳过SMTC封面，则不在媒体更新请求中包含封面信息
         String::new()
     } else {
-        // 使用album_thumbnail，它可能是base64数据或者是上传后的URL
-        album_thumbnail.clone()
+        // 使用thumbnail，它可能是base64数据或者是上传后的URL
+        thumbnail.clone()
     };
 
     let media_update = crate::modules::requests::build_media_update(
         &title,
         &artist,
         &source_app_name,
-        &album_title,
-        &album_artist,
-        &album_thumbnail_to_use,
+        &thumbnail_to_use,
+        duration,
+        elapsed_time,
     );
     // 将上一步的媒体信息同程序名构建请求数据
     let mut update_data =
@@ -62,10 +62,10 @@ pub fn report(
         // 首先尝试JSON解析方式
         if let Ok(mut json) = serde_json::from_str::<Value>(&response) {
             if let Some(media) = json.get_mut("media") {
-                if let Some(album_thumbnail) = media.get_mut("AlbumThumbnail") {
-                    if let Value::String(thumb_str) = album_thumbnail {
+                if let Some(thumbnail) = media.get_mut("AlbumThumbnail") {
+                    if let Value::String(thumb_str) = thumbnail {
                         if thumb_str.contains("base64") {
-                            *album_thumbnail = Value::String(HIDDEN_CONTENT.to_string());
+                            *thumbnail = Value::String(HIDDEN_CONTENT.to_string());
                         }
                     }
                 }
@@ -102,11 +102,5 @@ pub fn report(
         serde_json::Value::String(window_name.trim_end_matches('\u{0000}').to_string()),
     );
 
-    (
-        response,
-        update_data,
-        icon_base64,
-        media_update,
-        album_thumbnail,
-    )
+    (response, update_data, icon_base64, media_update, thumbnail)
 }

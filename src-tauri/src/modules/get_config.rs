@@ -5,7 +5,7 @@ use std::process::exit;
 #[derive(Debug, Deserialize, Serialize)]
 pub struct S3Config {
     pub s3_enable: bool,
-    pub bucket_url: String,
+    pub upload_path: String,
     pub endpoint: String,
     pub region: String,
     pub bucket_name: String,

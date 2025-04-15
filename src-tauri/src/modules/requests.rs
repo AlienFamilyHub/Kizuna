@@ -8,23 +8,32 @@ pub fn build_media_update(
     title: &str,
     artist: &str,
     source_app_name: &str,
-    album_title: &str,
-    album_artist: &str,
-    album_thumbnail: &str,
-) -> HashMap<String, String> {
+    thumbnail: &str,
+    duration: i64,
+    elapsed_time: i64,
+) -> HashMap<String, Value> {
     let mut media_update = HashMap::new();
-    media_update.insert("title".to_string(), title.to_string());
-    media_update.insert("artist".to_string(), artist.to_string());
-    media_update.insert("SourceAppName".to_string(), source_app_name.to_string());
-    media_update.insert("AlbumTitle".to_string(), album_title.to_string());
-    media_update.insert("AlbumArtist".to_string(), album_artist.to_string());
-    media_update.insert("AlbumThumbnail".to_string(), album_thumbnail.to_string());
+    media_update.insert("title".to_string(), Value::String(title.to_string()));
+    media_update.insert("artist".to_string(), Value::String(artist.to_string()));
+    media_update.insert(
+        "processName".to_string(),
+        Value::String(source_app_name.to_string()),
+    );
+    media_update.insert(
+        "AlbumThumbnail".to_string(),
+        Value::String(thumbnail.to_string()),
+    );
+    media_update.insert("duration".to_string(), Value::Number(duration.into()));
+    media_update.insert(
+        "elapsedTime".to_string(),
+        Value::Number(elapsed_time.into()),
+    );
     media_update
 }
 
 pub fn build_data(
     process_name: &str,
-    media_update: HashMap<String, String>,
+    media_update: HashMap<String, Value>,
     token: &str,
 ) -> HashMap<String, Value> {
     let start = SystemTime::now();
@@ -34,15 +43,18 @@ pub fn build_data(
     let timestamp = since_the_epoch.as_secs() as i64;
 
     let mut update_data = HashMap::new();
+
     update_data.insert("timestamp".to_string(), Value::from(timestamp));
+
     update_data.insert(
         "process".to_string(),
         Value::from(process_name.trim_end_matches('\0')),
     );
+
     update_data.insert("key".to_string(), Value::from(token));
 
     if let Some(title) = media_update.get("title") {
-        if !title.is_empty() {
+        if title.is_string() && !title.as_str().unwrap_or("").is_empty() {
             update_data.insert("media".to_string(), to_value(media_update).unwrap());
         }
     }
@@ -80,13 +92,13 @@ pub fn report(update_data: HashMap<String, Value>, endpoint: &str) -> String {
     match response {
         Ok(resp) => {
             let status = resp.status();
-            
+
             match resp.text() {
                 Ok(text) => {
                     if text.trim().is_empty() {
                         return format!("API 响应：空响应 (状态码: {})", status);
                     }
-                    
+
                     match serde_json::from_str::<HashMap<String, Value>>(&text) {
                         Ok(mut json) => {
                             if let Some(media_value) = media {

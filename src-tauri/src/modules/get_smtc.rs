@@ -9,9 +9,11 @@ pub mod windows {
     use windows::Media::Control::{
         GlobalSystemMediaTransportControlsSessionManager,
         GlobalSystemMediaTransportControlsSessionPlaybackInfo,
+        GlobalSystemMediaTransportControlsSessionTimelineProperties,
     };
     use windows::Storage::Streams::DataReader;
-    pub fn get_media_info() -> (String, String, String, String, String, String) {
+
+    pub fn get_media_info() -> (String, String, String, String, i64, i64) {
         // 获取配置，检查是否需要上报SMTC信息
         let config = crate::modules::get_config::load_config();
         if !config.server_config.report_smtc {
@@ -20,8 +22,8 @@ pub mod windows {
                 "".to_string(),
                 "".to_string(),
                 "".to_string(),
-                "".to_string(),
-                "".to_string(),
+                0,
+                0,
             );
         }
 
@@ -36,14 +38,14 @@ pub mod windows {
                     "".to_string(),
                     "".to_string(),
                     "".to_string(),
-                    "".to_string(),
-                    "".to_string(),
+                    0,
+                    0,
                 )
             }
         }
     }
 
-    async fn async_main() -> Result<(String, String, String, String, String, String)> {
+    async fn async_main() -> Result<(String, String, String, String, i64, i64)> {
         let session_manager =
             GlobalSystemMediaTransportControlsSessionManager::RequestAsync()?.get()?;
         let current_session = session_manager.GetCurrentSession()?;
@@ -61,10 +63,21 @@ pub mod windows {
                 "".to_string(),
                 "".to_string(),
                 "".to_string(),
-                "".to_string(),
-                "".to_string(),
+                0,
+                0,
             ));
         }
+
+        // 获取时间线信息（包含歌曲长度和当前播放位置）
+        let timeline_properties: GlobalSystemMediaTransportControlsSessionTimelineProperties =
+            current_session.GetTimelineProperties()?;
+        let duration_ticks = timeline_properties.EndTime()?.Duration;
+        let elapsed_time_ticks = timeline_properties.Position()?.Duration;
+
+        const TICKS_PER_SECOND: i64 = 10_000_000;
+
+        let duration = (duration_ticks as f64 / TICKS_PER_SECOND as f64).round() as i64;
+        let elapsed_time = (elapsed_time_ticks as f64 / TICKS_PER_SECOND as f64).round() as i64;
 
         // 获取媒体属性
         let media_properties_operation = current_session.TryGetMediaPropertiesAsync()?;
@@ -73,12 +86,9 @@ pub mod windows {
         let source_app_name_hstring: HSTRING = current_session.SourceAppUserModelId()?.into();
         let title_hstring: HSTRING = media_properties.Title()?.into();
         let artist_hstring: HSTRING = media_properties.Artist()?.into();
-        let album_title_hstring: HSTRING = media_properties.AlbumTitle()?.into();
-        let album_artist_hstring: HSTRING = media_properties.AlbumArtist()?.into();
 
         let mut album_thumbnail = "".to_string();
 
-        // 如果没有网络URL，则获取缩略图并转换为base64
         let thumbnail_ref = media_properties.Thumbnail()?;
         let thumbnail_stream = thumbnail_ref.OpenReadAsync()?.get()?;
         // 使用 DataReader 读取流中的数据
@@ -106,25 +116,38 @@ pub mod windows {
             // 检查是否需要上传封面到S3桶
             if config.server_config.upload_smtc_cover && config.server_config.s3_config.s3_enable {
                 // 上传封面并获取URL
-                let cover_url = crate::modules::upload_cover::upload_smtc_cover(&thumbnail_data);
+                let cover_url =
+                    crate::modules::upload_cover::upload_smtc_cover(&thumbnail_data).await;
 
                 // 如果上传成功，使用URL，否则使用base64
-                if !cover_url.is_empty() {
-                    album_thumbnail = cover_url;
-                } else {
-                    // 上传失败，使用base64
-                    album_thumbnail =
-                        base64::engine::general_purpose::STANDARD.encode(&thumbnail_data);
+                match cover_url {
+                    Ok(url) => {
+                        album_thumbnail = url;
+
+                        if album_thumbnail.is_empty() {
+                            // 数据为空，使用base64
+                            album_thumbnail =
+                                base64::engine::general_purpose::STANDARD.encode(&thumbnail_data);
+                            log::warn!("S3上传返回为空，使用base64");
+                        }
+                    }
+                    Err(_) => {
+                        // 上传失败，使用base64
+                        album_thumbnail =
+                            base64::engine::general_purpose::STANDARD.encode(&thumbnail_data);
+                        log::warn!("S3上传失败，使用base64");
+                    }
                 }
             } else {
                 // 不上传，使用base64
                 let base64_data = base64::engine::general_purpose::STANDARD.encode(&thumbnail_data);
                 // 检测图片类型并添加适当的MIME类型前缀
-                let mime_type = if thumbnail_data.len() >= 3 && thumbnail_data[0..3] == [0xFF, 0xD8, 0xFF] {
-                    "image/jpeg"
-                } else {
-                    "image/png"
-                };
+                let mime_type =
+                    if thumbnail_data.len() >= 3 && thumbnail_data[0..3] == [0xFF, 0xD8, 0xFF] {
+                        "image/jpeg"
+                    } else {
+                        "image/png"
+                    };
                 album_thumbnail = format!("data:{};base64,{}", mime_type, base64_data);
             }
         }
@@ -133,9 +156,9 @@ pub mod windows {
             title_hstring.to_string_lossy().to_owned(),
             artist_hstring.to_string_lossy().to_owned(),
             source_app_name_hstring.to_string_lossy().to_owned(),
-            album_title_hstring.to_string_lossy().to_owned(),
-            album_artist_hstring.to_string_lossy().to_owned(),
             album_thumbnail,
+            duration,
+            elapsed_time,
         ))
     }
 }

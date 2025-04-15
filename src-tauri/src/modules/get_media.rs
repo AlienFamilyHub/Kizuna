@@ -1,4 +1,4 @@
-pub fn get_media_info() -> (String, String, String, String, String, String) {
+pub fn get_media_info() -> (String, String, String, String, i64, i64) {
     #[cfg(target_os = "windows")]
     if cfg!(target_os = "windows") {
         return crate::modules::get_smtc::windows::get_media_info();
@@ -10,7 +10,7 @@ pub fn get_media_info() -> (String, String, String, String, String, String) {
         String::new(),
         String::new(),
         String::new(),
-        String::new(),
-        String::new(),
+        0,
+        0,
     );
 }
