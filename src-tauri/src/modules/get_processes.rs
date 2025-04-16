@@ -8,7 +8,7 @@ pub fn replacer(process_name: &str) -> String {
     process_name.to_string()
 }
 
-pub fn get_window_info() -> (String, String, String) {
+pub fn get_window_info() -> (String, String, Vec<u8>) {
     #[cfg(target_os = "windows")]
     if cfg!(target_os = "windows") {
         return windows::get_os_windows_info();
@@ -31,7 +31,7 @@ pub fn get_window_info() -> (String, String, String) {
         return (String::new(), String::new(), String::new());
     }
 
-    (String::new(), String::new(), String::new())
+    (String::new(), String::new(), Vec::new())
 }
 
 #[cfg(target_os = "windows")]
@@ -64,7 +64,7 @@ pub mod windows {
     };
     use winapi::um::winuser::{GetDC, GetIconInfo, ICONINFO};
 
-    pub fn get_os_windows_info() -> (String, String, String) {
+    pub fn get_os_windows_info() -> (String, String, Vec<u8>) {
         unsafe {
             let h_wnd = GetForegroundWindow();
             let mut window_title: [u16; 255] = [0; 255];
@@ -90,26 +90,20 @@ pub mod windows {
             let return_window_title = OsString::from_wide(&window_title)
                 .to_string_lossy()
                 .into_owned();
-            let return_icon_base64 = get_window_icon(&return_window_title);
-            return (return_process_name, return_window_title, return_icon_base64);
+            let icon_png_bytes = get_window_icon(&return_window_title);
+            return (return_process_name, return_window_title, icon_png_bytes);
         }
     }
 
-    pub fn get_window_icon(window_title: &str) -> String {
+    pub fn get_window_icon(window_title: &str) -> Vec<u8> {
         let hicon = get_os_windows_icon(window_title);
-        let cache_file = crate::libs::cache::get_cache_directory().join("icon.png");
-
-        // 判断数据是否正常
-        if let Err(e) = convert_hicon_to_png(hicon, &cache_file.to_str().unwrap_or_default()) {
-            eprintln!("Failed to convert icon to PNG: {}", e);
+        match convert_hicon_to_png_bytes(hicon) {
+            Ok(icon_png_bytes) => icon_png_bytes,
+            Err(e) => {
+                eprintln!("Failed to convert icon to PNG: {}", e);
+                Vec::new()
+            }
         }
-
-        // 将图标转换为 base64 编码
-        let icon_base64 = crate::modules::icon_converter::convert_png_to_base64(
-            &cache_file.to_str().unwrap_or_default(),
-        )
-        .unwrap_or_default();
-        return icon_base64;
     }
 
     pub fn get_os_windows_icon(window_title: &str) -> Option<HICON> {
@@ -148,10 +142,9 @@ pub mod windows {
         None
     }
 
-    pub fn convert_hicon_to_png(
+    pub fn convert_hicon_to_png_bytes(
         hicon_option: Option<HICON>,
-        filename: &str,
-    ) -> Result<(), Box<dyn Error>> {
+    ) -> Result<Vec<u8>, Box<dyn Error>> {
         if let Some(hicon) = hicon_option {
             unsafe {
                 // Get icon info
@@ -216,7 +209,7 @@ pub mod windows {
                     buffer.swap(offset, offset + 2); // Swap blue (B) and red (R)
                 }
 
-                // Convert to PNG using image crate
+                // Create image buffer and encode as PNG in memory
                 let img = ImageBuffer::<Rgba<u8>, _>::from_raw(
                     bitmap.bmWidth as u32,
                     bitmap.bmHeight as u32,
@@ -224,8 +217,13 @@ pub mod windows {
                 )
                 .ok_or("Failed to create image buffer")?;
                 let dynamic_image = DynamicImage::ImageRgba8(img);
-                dynamic_image.save(filename)?;
-                Ok(())
+
+                let mut bytes = Vec::new();
+                dynamic_image.write_to(
+                    &mut std::io::Cursor::new(&mut bytes),
+                    image::ImageFormat::Png,
+                )?;
+                Ok(bytes)
             }
         } else {
             Err("No HICON provided".into())
@@ -259,7 +257,7 @@ pub mod macos {
     #[link(name = "Foundation", kind = "framework")]
     #[link(name = "ApplicationServices", kind = "framework")]
     extern "C" {}
-    pub fn get_os_macos_info() -> Result<(String, String, String, String, String), String> {
+    pub fn get_os_macos_info() -> Result<(String, String, String, String, Vec<u8>), String> {
         autoreleasepool(|| {
             unsafe {
                 // 获取前台应用
@@ -364,19 +362,7 @@ pub mod macos {
                 let mut buffer = vec![0u8; length];
                 let _: () = msg_send![png_data, getBytes: buffer.as_mut_ptr() length: length];
 
-                let file_path = crate::libs::cache::get_cache_directory().join("icon.png");
-                std::fs::write(&file_path, &buffer)
-                    .map_err(|e| format!("Failed to save icon: {}", e))?;
-
-                let icon_base64 = crate::modules::icon_converter::convert_png_to_base64(
-                    file_path
-                        .to_str()
-                        .ok_or("Failed to convert icon to base64")?,
-                );
-                // 转为option<string> to string
-                let icon_base64 = icon_base64.ok_or("Failed to convert icon to base64")?;
-
-                Ok((process_name, bundle_id, path, window_title, icon_base64))
+                Ok((process_name, bundle_id, path, window_title, buffer))
             }
         })
     }

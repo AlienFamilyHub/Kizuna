@@ -8,8 +8,8 @@ pub mod requests;
 
 pub mod logs;
 
-pub mod icon_converter;
+pub mod files_converter;
 
 pub mod get_media;
 
-pub mod upload_cover;
+pub mod upload_images;

@@ -1,6 +1,4 @@
 use chrono::Local;
-use image::io::Reader as ImageReader;
-use image::ImageFormat;
 use s3::bucket::Bucket;
 use s3::creds::Credentials;
 use s3::region::Region;
@@ -8,7 +6,7 @@ use serde::{Deserialize, Serialize};
 use sha2::{Digest, Sha256};
 use std::collections::HashMap;
 use std::fs::{self, File};
-use std::io::{Cursor, Read};
+use std::io::Read;
 use std::path::PathBuf;
 
 #[derive(Serialize, Deserialize)]
@@ -36,22 +34,6 @@ fn save_cache(cache: &Cache, cache_path: &PathBuf) {
     }
 }
 
-fn convert_to_webp(image_data: &[u8]) -> Result<Vec<u8>, String> {
-    let img = ImageReader::new(Cursor::new(image_data))
-        .with_guessed_format()
-        .map_err(|e| format!("无法识别图像格式: {}", e))?
-        .decode()
-        .map_err(|e| format!("解码图像失败: {}", e))?;
-
-    let mut webp_data = Vec::new();
-    let mut cursor = Cursor::new(&mut webp_data);
-
-    img.write_to(&mut cursor, ImageFormat::WebP)
-        .map_err(|e| format!("转换为WebP失败: {}", e))?;
-
-    Ok(webp_data)
-}
-
 fn replace_bucket_path_template(template: &str) -> String {
     let now = Local::now();
     template
@@ -61,7 +43,7 @@ fn replace_bucket_path_template(template: &str) -> String {
 }
 
 // make by chatgpt
-pub async fn upload_smtc_cover(image_data: &[u8]) -> Result<String, String> {
+pub async fn upload_images(image_data: &[u8]) -> Result<String, String> {
     // 计算文件 hash
     let hash = format!("{:x}", Sha256::digest(image_data));
     let filename = format!("{}.webp", hash);
@@ -110,7 +92,7 @@ pub async fn upload_smtc_cover(image_data: &[u8]) -> Result<String, String> {
         .with_path_style(); // important for minio or custom endpoints
 
     // 转换图像为 WebP 格式
-    let webp_data = convert_to_webp(image_data)?;
+    let webp_data = crate::modules::files_converter::convert_to_webp(image_data)?;
 
     // 执行上传操作
     bucket

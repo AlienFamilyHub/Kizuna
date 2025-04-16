@@ -4,7 +4,7 @@ use tauri::Emitter;
 use tauri::{AppHandle, Wry};
 
 #[tauri::command]
-pub fn start(app_handle: AppHandle<Wry>) {
+pub async fn start(app_handle: AppHandle<Wry>) {
     let config = crate::modules::get_config::load_config();
     let endpoint = config.server_config.endpoint.clone();
     let token = config.server_config.token.clone();
@@ -13,12 +13,12 @@ pub fn start(app_handle: AppHandle<Wry>) {
 
     std::thread::spawn(move || loop {
         std::thread::sleep(report_time);
-        let (logdata, data, icon_base64, _media_update, album_thumbnail) =
+        let (logdata, data, icon_data, _media_update, thumbnail) =
             report::report(&endpoint, &token);
         let home_event_data = serde_json::json!({
             "data": data,
-            "icon": icon_base64,
-            "AlbumThumbnail": album_thumbnail,
+            "icon": icon_data,
+            "AlbumThumbnail": thumbnail,
         });
         app_handle
             .emit("home-event", home_event_data)

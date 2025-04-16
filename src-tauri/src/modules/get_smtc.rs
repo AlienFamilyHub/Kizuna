@@ -1,6 +1,5 @@
 #[cfg(target_os = "windows")]
 pub mod windows {
-    use base64::Engine;
     use std::fs::File;
     use std::io::Write;
     use tokio::runtime::Runtime;
@@ -13,7 +12,7 @@ pub mod windows {
     };
     use windows::Storage::Streams::DataReader;
 
-    pub fn get_media_info() -> (String, String, String, String, i64, i64) {
+    pub fn get_media_info() -> (String, String, String, Vec<u8>, i64, i64) {
         // 获取配置，检查是否需要上报SMTC信息
         let config = crate::modules::get_config::load_config();
         if !config.server_config.report_smtc {
@@ -21,7 +20,7 @@ pub mod windows {
                 "".to_string(),
                 "".to_string(),
                 "".to_string(),
-                "".to_string(),
+                Vec::new(),
                 0,
                 0,
             );
@@ -37,7 +36,7 @@ pub mod windows {
                     "".to_string(),
                     "".to_string(),
                     "".to_string(),
-                    "".to_string(),
+                    Vec::new(),
                     0,
                     0,
                 )
@@ -45,7 +44,7 @@ pub mod windows {
         }
     }
 
-    async fn async_main() -> Result<(String, String, String, String, i64, i64)> {
+    async fn async_main() -> Result<(String, String, String, Vec<u8>, i64, i64)> {
         let session_manager =
             GlobalSystemMediaTransportControlsSessionManager::RequestAsync()?.get()?;
         let current_session = session_manager.GetCurrentSession()?;
@@ -62,7 +61,7 @@ pub mod windows {
                 "".to_string(),
                 "".to_string(),
                 "".to_string(),
-                "".to_string(),
+                Vec::new(),
                 0,
                 0,
             ));
@@ -87,8 +86,6 @@ pub mod windows {
         let title_hstring: HSTRING = media_properties.Title()?.into();
         let artist_hstring: HSTRING = media_properties.Artist()?.into();
 
-        let mut album_thumbnail = "".to_string();
-
         let thumbnail_ref = media_properties.Thumbnail()?;
         let thumbnail_stream = thumbnail_ref.OpenReadAsync()?.get()?;
         // 使用 DataReader 读取流中的数据
@@ -96,10 +93,13 @@ pub mod windows {
         let stream_size = thumbnail_stream.Size()?;
         // 将 u64 转换为 u32，处理可能的溢出
         let stream_size_u32: u32 = stream_size.try_into().unwrap_or(0);
+
+        let mut thumbnail_data = Vec::new();
+
         if stream_size_u32 > 0 {
             data_reader.LoadAsync(stream_size_u32)?.get()?;
             // 读取字节数据
-            let mut thumbnail_data = vec![0u8; stream_size_u32 as usize];
+            thumbnail_data.resize(stream_size_u32 as usize, 0);
             data_reader.ReadBytes(&mut thumbnail_data)?;
 
             // 保存本地缓存
@@ -109,54 +109,13 @@ pub mod windows {
             // 写入文件
             let mut file = File::create(&cache_file_path)?;
             file.write_all(&thumbnail_data)?;
-
-            // 获取配置
-            let config = crate::modules::get_config::load_config();
-
-            // 检查是否需要上传封面到S3桶
-            if config.server_config.upload_smtc_cover && config.server_config.s3_config.s3_enable {
-                // 上传封面并获取URL
-                let cover_url =
-                    crate::modules::upload_cover::upload_smtc_cover(&thumbnail_data).await;
-
-                // 如果上传成功，使用URL，否则使用base64
-                match cover_url {
-                    Ok(url) => {
-                        album_thumbnail = url;
-
-                        if album_thumbnail.is_empty() {
-                            // 数据为空，使用base64
-                            album_thumbnail =
-                                base64::engine::general_purpose::STANDARD.encode(&thumbnail_data);
-                            log::warn!("S3上传返回为空，使用base64");
-                        }
-                    }
-                    Err(_) => {
-                        // 上传失败，使用base64
-                        album_thumbnail =
-                            base64::engine::general_purpose::STANDARD.encode(&thumbnail_data);
-                        log::warn!("S3上传失败，使用base64");
-                    }
-                }
-            } else {
-                // 不上传，使用base64
-                let base64_data = base64::engine::general_purpose::STANDARD.encode(&thumbnail_data);
-                // 检测图片类型并添加适当的MIME类型前缀
-                let mime_type =
-                    if thumbnail_data.len() >= 3 && thumbnail_data[0..3] == [0xFF, 0xD8, 0xFF] {
-                        "image/jpeg"
-                    } else {
-                        "image/png"
-                    };
-                album_thumbnail = format!("data:{};base64,{}", mime_type, base64_data);
-            }
         }
 
         Ok((
             title_hstring.to_string_lossy().to_owned(),
             artist_hstring.to_string_lossy().to_owned(),
             source_app_name_hstring.to_string_lossy().to_owned(),
-            album_thumbnail,
+            thumbnail_data,
             duration,
             elapsed_time,
         ))

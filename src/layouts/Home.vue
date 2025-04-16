@@ -43,7 +43,7 @@ function formatTimestamp(timestamp: number) {
 				<!-- Program Info -->
 				<div class="space-y-4 p-8">
 					<div class="flex items-center space-x-6">
-						<img v-if="eventData.icon" :src="`data:image/png;base64,${eventData.icon}`" alt="Program Icon" class="size-16 rounded-md">
+						<img v-if="eventData.icon" :src="eventData.icon" alt="Program Icon" class="size-16 rounded-md">
 						<div>
 							<h1 class="mb-1 text-3xl font-light text-gray-900 dark:text-gray-100">
 								{{ eventData.data?.window_name }}

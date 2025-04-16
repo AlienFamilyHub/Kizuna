@@ -2,7 +2,7 @@ use reqwest::blocking::Client;
 use reqwest::header::{HeaderMap, HeaderName, HeaderValue};
 use serde_json::{to_value, Value};
 use std::collections::HashMap;
-use std::time::{Duration, SystemTime, UNIX_EPOCH};
+use std::time::{SystemTime, UNIX_EPOCH};
 
 pub fn build_media_update(
     title: &str,
@@ -15,9 +15,17 @@ pub fn build_media_update(
     let mut media_update = HashMap::new();
     media_update.insert("title".to_string(), Value::String(title.to_string()));
     media_update.insert("artist".to_string(), Value::String(artist.to_string()));
+    
+    // 获取配置并应用进程名称替换规则
+    let config = crate::modules::get_config::load_config();
+    let process_name = config.rules.iter()
+        .find(|rule| rule.match_application == source_app_name)
+        .map(|rule| rule.replace.application.as_str())
+        .unwrap_or(source_app_name);
+    
     media_update.insert(
         "processName".to_string(),
-        Value::String(source_app_name.to_string()),
+        Value::String(process_name.to_string()),
     );
     media_update.insert(
         "AlbumThumbnail".to_string(),
@@ -35,6 +43,7 @@ pub fn build_data(
     process_name: &str,
     media_update: HashMap<String, Value>,
     token: &str,
+    icon: &str,
 ) -> HashMap<String, Value> {
     let start = SystemTime::now();
     let since_the_epoch = start
@@ -46,28 +55,49 @@ pub fn build_data(
 
     update_data.insert("timestamp".to_string(), Value::from(timestamp));
 
-    update_data.insert(
-        "process".to_string(),
-        Value::from(process_name.trim_end_matches('\0')),
-    );
 
     update_data.insert("key".to_string(), Value::from(token));
 
+    // 新增 processInfo 字段
+    let mut process_info = serde_json::Map::new();
+    process_info.insert(
+        "name".to_string(),
+        Value::from(process_name.trim_end_matches('\0')),
+    );
+    process_info.insert(
+        "description".to_string(),
+        Value::from(process_name.trim_end_matches('\0')),
+    );
+    if icon.starts_with("http://") || icon.starts_with("https://") {
+        process_info.insert("iconUrl".to_string(), Value::from(icon));
+    } else if !icon.is_empty() {
+        process_info.insert("iconBase64".to_string(), Value::from(icon));
+    }
+
+    update_data.insert(
+        "process".to_string(),
+        to_value(process_info).expect("Failed to convert process_info to Value"),
+    );
+
     if let Some(title) = media_update.get("title") {
-        if title.is_string() && !title.as_str().unwrap_or("").is_empty() {
-            update_data.insert("media".to_string(), to_value(media_update).unwrap());
+        if title.is_string()
+            && !title
+                .as_str()
+                .expect("Failed to convert title to Value")
+                .is_empty()
+        {
+            update_data.insert(
+                "media".to_string(),
+                to_value(media_update).expect("Failed to convert media_update to Value"),
+            );
         }
     }
 
     update_data
 }
 
-pub fn report(update_data: HashMap<String, Value>, endpoint: &str) -> String {
-    let client = Client::builder()
-        .timeout(Duration::from_secs(8))
-        .danger_accept_invalid_certs(true) // 忽略证书验证
-        .build()
-        .expect("Failed to build client");
+pub fn send_request(update_data: HashMap<String, Value>, endpoint: &str) -> String {
+    let client = Client::new();
 
     let mut headers = HeaderMap::new();
     headers.insert(
@@ -80,9 +110,6 @@ pub fn report(update_data: HashMap<String, Value>, endpoint: &str) -> String {
         HeaderValue::from_static("Mozilla/5.0 (Windows NT 10.0; Win64; x64; TokaiTeio) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/114.0.0.1 Safari/537.36 Edg/114.0.1823.82 iykrzu/114.514"),
     );
 
-    // 从update_data中提取媒体字段（如果存在）
-    let media = update_data.get("media");
-
     let response = client
         .post(endpoint)
         .headers(headers)
@@ -90,30 +117,10 @@ pub fn report(update_data: HashMap<String, Value>, endpoint: &str) -> String {
         .send();
 
     match response {
-        Ok(resp) => {
-            let status = resp.status();
-
-            match resp.text() {
-                Ok(text) => {
-                    if text.trim().is_empty() {
-                        return format!("API 响应：空响应 (状态码: {})", status);
-                    }
-
-                    match serde_json::from_str::<HashMap<String, Value>>(&text) {
-                        Ok(mut json) => {
-                            if let Some(media_value) = media {
-                                json.insert("media".to_string(), media_value.clone());
-                            }
-                            return format!("API 响应：{:?}", json);
-                        }
-                        Err(e) => {
-                            return format!("解析响应时出错：{}，原始响应：{}", e, text);
-                        }
-                    }
-                }
-                Err(e) => return format!("读取响应内容时出错：{}", e),
-            }
-        }
-        Err(e) => return format!("发送请求时出错：{}，详细信息：{:?}", e, e),
+        Ok(resp) => match resp.text() {
+            Ok(text) => text,
+            Err(err) => format!("读取响应体失败: {}", err),
+        },
+        Err(err) => format!("请求失败: {}", err),
     }
 }

@@ -1,7 +1,9 @@
+use crate::modules::files_converter::encode_as_base64;
 use lazy_static::lazy_static;
 use regex::Regex;
 use serde_json::Value;
 use std::collections::HashMap;
+use tokio::runtime::Runtime;
 
 // 定义常量
 const HIDDEN_CONTENT: &str = "[BASE64_CONTENT_HIDDEN]";
@@ -19,25 +21,57 @@ pub fn report(
     // 获取配置
     let config = crate::modules::get_config::load_config();
 
-    // 从 get_processes 模块获取当前前台进程名称和窗口名称以及icon_base64
-    let (process_name, window_name, icon_base64) = crate::modules::get_processes::get_window_info();
+    let rt = Runtime::new().expect("Failed to create Tokio runtime");
 
-    // 自定义程序名：从配置文件中读取规则，替换进程名
-    let process_name = crate::modules::get_processes::replacer(&process_name.replace(".exe", ""));
+    // 获取前台进程信息
+    let (process_name_raw, window_name, icon_bytes) =
+        crate::modules::get_processes::get_window_info();
+
+    let process_name =
+        crate::modules::get_processes::replacer(&process_name_raw.replace(".exe", ""));
 
     // 获取媒体信息
-    let (title, artist, source_app_name, thumbnail, duration, elapsed_time) =
+    let (title, artist, source_app_name, thumbnail_bytes, duration, elapsed_time) =
         crate::modules::get_media::get_media_info();
 
-    // 构建媒体更新请求，根据配置决定是否包含封面信息
+    let thumbnail_base64 = encode_as_base64(&thumbnail_bytes);
+    let icon_base64 = encode_as_base64(&icon_bytes);
+
+    // 处理 thumbnail
     let thumbnail_to_use = if config.server_config.skip_smtc_cover {
-        // 如果配置为跳过SMTC封面，则不在媒体更新请求中包含封面信息
         String::new()
     } else {
-        // 使用thumbnail，它可能是base64数据或者是上传后的URL
-        thumbnail.clone()
+        if config.server_config.upload_smtc_cover && config.server_config.s3_config.s3_enable {
+            match rt.block_on(crate::modules::upload_images::upload_images(
+                &thumbnail_bytes,
+            )) {
+                Ok(url) if !url.is_empty() => url,
+                _ => {
+                    log::warn!("S3上传失败或返回为空，使用base64");
+                    thumbnail_base64.clone()
+                }
+            }
+        } else {
+            thumbnail_base64.clone()
+        }
     };
 
+    // 处理 icon_bytes
+    let icon_to_use = {
+        if config.server_config.s3_config.s3_enable {
+            match rt.block_on(crate::modules::upload_images::upload_images(&icon_bytes)) {
+                Ok(url) if !url.is_empty() => url,
+                _ => {
+                    log::warn!("Icon上传失败或返回为空，使用base64");
+                    icon_base64.clone()
+                }
+            }
+        } else {
+            icon_base64.clone()
+        }
+    };
+
+    // 构建媒体更新
     let media_update = crate::modules::requests::build_media_update(
         &title,
         &artist,
@@ -46,12 +80,15 @@ pub fn report(
         duration,
         elapsed_time,
     );
-    // 将上一步的媒体信息同程序名构建请求数据
-    let mut update_data =
-        crate::modules::requests::build_data(&process_name, media_update.clone(), token);
 
-    // 发送请求并记录日志
-    let response = crate::modules::requests::report(update_data.clone(), endpoint);
+    let mut update_data = crate::modules::requests::build_data(
+        &process_name,
+        media_update.clone(),
+        token,
+        &icon_to_use,
+    );
+
+    let response = crate::modules::requests::send_request(update_data.clone(), endpoint);
 
     let status = !config.server_config.log_base64
         && config.server_config.report_smtc
@@ -59,7 +96,6 @@ pub fn report(
         && !config.server_config.upload_smtc_cover;
 
     let log_message = if status {
-        // 首先尝试JSON解析方式
         if let Ok(mut json) = serde_json::from_str::<Value>(&response) {
             if let Some(media) = json.get_mut("media") {
                 if let Some(thumbnail) = media.get_mut("AlbumThumbnail") {
@@ -94,13 +130,17 @@ pub fn report(
 
     log::info!("{}", log_message);
 
-    // 移除构建数据当中的 key 字段
     update_data.remove("key");
-    // 插入窗口名称
     update_data.insert(
         "window_name".to_string(),
         serde_json::Value::String(window_name.trim_end_matches('\u{0000}').to_string()),
     );
 
-    (response, update_data, icon_base64, media_update, thumbnail)
+    (
+        response,
+        update_data,
+        icon_base64,
+        media_update,
+        thumbnail_base64,
+    )
 }
