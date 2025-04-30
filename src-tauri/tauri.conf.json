@@ -1,20 +1,21 @@
 {
 	"$schema": "https://schema.tauri.app/config/2",
 	"productName": "kizuna",
-	"version": "0.0.2",
+	"version": "0.0.3",
 	"identifier": "top.yumehoxi.kizuna",
 	"build": {
-		"beforeDevCommand": "pnpm dev",
-		"beforeBuildCommand": "pnpm generate",
-		"devUrl": "http://localhost:3000",
-		"frontendDist": "../dist"
+		"beforeDevCommand": "pnpm run dev",
+		"beforeBuildCommand": "pnpm run build",
+		"devUrl": "http://localhost:5173",
+		"frontendDist": "../dist",
+		"removeUnusedCommands": true
 	},
 	"app": {
 		"windows": [
 			{
 				"title": "Kizuna",
-				"width": 1024,
-				"height": 576
+				"width": 486,
+				"height": 842
 			}
 		],
 		"security": {

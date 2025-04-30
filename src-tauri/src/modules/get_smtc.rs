@@ -31,15 +31,27 @@ pub mod windows {
         match rt.block_on(async_main()) {
             Ok(info) => info,
             Err(e) => {
-                log::error!("Failed to get SMTC info: {}", e);
-                (
-                    "".to_string(),
-                    "".to_string(),
-                    "".to_string(),
-                    Vec::new(),
-                    0,
-                    0,
-                )
+                if e.code().is_err() {
+                    log::error!("应该是成功执行了操作: {}", e);
+                    (
+                        "".to_string(),
+                        "".to_string(),
+                        "".to_string(),
+                        Vec::new(),
+                        0,
+                        0,
+                    )
+                } else {
+                    log::error!("Failed to get SMTC info: {}", e);
+                    (
+                        "".to_string(),
+                        "".to_string(),
+                        "".to_string(),
+                        Vec::new(),
+                        0,
+                        0,
+                    )
+                }
             }
         }
     }

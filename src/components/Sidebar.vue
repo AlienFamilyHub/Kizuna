@@ -1,99 +1,93 @@
 <script setup lang="ts">
-import { invoke } from "@tauri-apps/api/core";
-import { openUrl } from "@tauri-apps/plugin-opener";
-import { onMounted, ref } from "vue";
-import Avatar from "./Avatar.vue";
+import { Button } from "@/components/ui/button";
+import { Card, CardContent } from "@/components/ui/card";
+import { Separator } from "@/components/ui/separator";
+import {
+	Sidebar,
+	SidebarContent,
+	SidebarFooter,
+	SidebarHeader,
+	SidebarMenu,
+	SidebarMenuButton,
+	SidebarMenuItem,
+} from "@/components/ui/sidebar";
+import { Tooltip, TooltipContent, TooltipProvider, TooltipTrigger } from "@/components/ui/tooltip";
+import { Icon } from "@iconify/vue";
+import { computed } from "vue";
+import { useRoute } from "vue-router";
 
-const curYear = new Date().getFullYear();
-const backend_version = ref("");
+const route = useRoute();
+const currentPath = computed(() => route.path);
 
-onMounted(async () => {
-	try {
-		const version = await invoke("get_version");
-		backend_version.value = version as string;
-	} catch (error) {
-		console.error("Failed to get version:", error);
-	}
-});
-
-const sections = [
-	{
-		name: "主页",
-		icon: "mingcute:home-2-line",
-		path: "/",
-	},
-	{
-		name: "日志",
-		icon: "mingcute:align-left-line",
-		path: "/log/",
-	},
-	{
-		name: "设置",
-		icon: "mingcute:settings-2-line",
-		path: "/setting/",
-	},
+const navItems = [
+	{ name: "首页", path: "/", icon: "mingcute:home-4-line" },
+	{ name: "设置", path: "/settings", icon: "mingcute:settings-3-line" },
+	{ name: "日志", path: "/logs", icon: "mingcute:file-line" },
 ];
 
-const openInBrowser = async (url: string) => {
-	try {
-		await openUrl(url);
-	} catch (error) {
-		console.error("Failed to open URL:", error);
-	}
-};
+const currentYear = new Date().getFullYear();
 </script>
 
 <template>
-	<div class="drawer lg:drawer-open">
-		<input id="my-drawer" type="checkbox" class="drawer-toggle">
-		<div class="drawer-content">
-			<label for="my-drawer" class="drawer-button lg:hidden">
-				<Icon name="solar:sidebar-code-bold" class="m-4 size-8" />
-			</label>
-			<slot />
-		</div>
-		<div class="drawer-side">
-			<label for="my-drawer" aria-label="close sidebar" class="drawer-overlay" />
-			<aside
-				class="fixed left-0 top-0 z-50 flex h-screen w-60 max-w-60 flex-col justify-between border-r border-gray-300 bg-gray-100 p-4 md:flex dark:border-gray-950 dark:bg-gray-800"
-			>
-				<div>
-					<div class="flex flex-col items-center">
-						<div class="mb-4 flex items-center text-base font-bold">
-							<Avatar class="mr-2 size-10" />
-							Kizuna
-						</div>
-						<div class="w-full max-w-56 lg:w-56">
-							<ul class="menu w-full rounded-2xl bg-base-200 text-base">
-								<li v-for="(item, index) in sections" :key="index" class="mb-2">
-									<router-link
-										:to="item.path" :class="{ active: $route.path === item.path }"
-										class="mb-2 flex w-full items-center"
-									>
-										<Icon :name="item.icon" class="mr-2 size-6" /> {{ item.name }}
-									</router-link>
-								</li>
-							</ul>
-						</div>
-					</div>
+	<Sidebar class="border-gray-200 dark:border-gray-800 md:block">
+		<SidebarHeader class="p-5">
+			<div class="flex items-center space-x-2">
+				<div class="bg-primary rounded-md flex h-10 w-10 items-center justify-center">
+					<span class="text-primary-foreground text-lg font-bold">MT</span>
 				</div>
-				<div class="mt-4 text-center text-sm lg:text-base">
-					<div class="divider mb-2" />
-					© {{ curYear }} <a
-						class="text-blue-500 hover:text-blue-700 dark:text-blue-300 dark:hover:text-blue-500"
-						href="javascript:void(0)" @click="openInBrowser('https://github.com/TNXG/Kizuna')"
-					>Kizuna</a>
-					{{ backend_version }}
-					<br>
-					<p class="text-sm text-gray-700 dark:text-gray-300">
-						Designed by <a
-							href="javascript:void(0)"
-							class="text-blue-500 hover:text-blue-700 dark:text-blue-300 dark:hover:text-blue-500"
-							@click="openInBrowser('https://github.com/TNXG/tnxg-homepage')"
-						>tnxg-homepage</a>
+				<h1 class="text-base font-bold">
+					Kizuna @
+				</h1>
+			</div>
+		</SidebarHeader>
+
+		<SidebarContent>
+			<Card class="bg-background mx-2 dark:bg-gray-800">
+				<CardContent>
+					<SidebarMenu>
+						<SidebarMenuItem v-for="item in navItems" :key="item.name" class="mt-1">
+							<SidebarMenuButton
+								:is-active="currentPath === item.path"
+								class="text-lg flex h-10 w-full items-center dark:text-gray-300 dark:hover:bg-gray-700"
+							>
+								<RouterLink :to="item.path" class="flex w-full items-center">
+									<Icon :icon="item.icon" class="mr-2 size-6" />
+									<span>{{ item.name }}</span>
+								</RouterLink>
+							</SidebarMenuButton>
+						</SidebarMenuItem>
+					</SidebarMenu>
+				</CardContent>
+			</Card>
+		</SidebarContent>
+
+		<SidebarFooter>
+			<Separator class="dark:bg-gray-700" />
+			<div class="p-4">
+				<div class="mb-2 flex justify-center">
+					<TooltipProvider :delay-duration="100">
+						<Tooltip>
+							<TooltipTrigger>
+								<a href="https://github.com/yourusername/media-tracker" target="_blank" rel="noopener noreferrer">
+									<Button variant="ghost" size="icon" class="dark:text-gray-300 dark:hover:bg-gray-700">
+										<Icon icon="mingcute:github-line" class="size-5" />
+										<span class="sr-only">GitHub Repository</span>
+									</Button>
+								</a>
+							</TooltipTrigger>
+							<TooltipContent>
+								<p>GitHub Repository</p>
+							</TooltipContent>
+						</Tooltip>
+					</TooltipProvider>
+				</div>
+				<div class="text-sm text-gray-500 text-center dark:text-gray-400">
+					<p>© {{ currentYear }} Media Tracker</p>
+					<p class="text-xs">
+						Open Source Project
 					</p>
 				</div>
-			</aside>
-		</div>
-	</div>
+			</div>
+		</SidebarFooter>
+	</Sidebar>
 </template>

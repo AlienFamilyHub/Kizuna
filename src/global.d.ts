@@ -1,26 +1,28 @@
-declare global {
-	// build_media_update 函数返回的媒体更新数据结构
-	interface MediaUpdate {
-		title: string; // 媒体标题
-		artist: string; // 艺术家或创作者
-		SourceAppName: string; // 来源应用名称
-		AlbumTitle: string; // 专辑标题
-		AlbumArtist: string; // 专辑艺术家
-	}
-
-	// build_data 函数返回的数据结构
-	interface UpdateData {
-		timestamp: number; // 时间戳，单位为秒
-		process: string; // 进程名称
-		window_name?: string; // 窗口名称
-		media?: MediaUpdate; // 媒体信息（可选字段，如果没有标题，则不存在该字段）
-	}
-
-	interface ReturnData {
-		data: UpdateData;
-		icon?: string;
-		AlbumThumbnail?: string;
-	}
+interface MediaInfo {
+	AlbumThumbnail: string;
+	artist: string;
+	duration: number;
+	elapsedTime: number;
+	processName: string;
+	title: string;
+	processName: string;
 }
 
-export { };
+interface ProcessInfo {
+	description: string;
+	iconUrl: string;
+	name: string;
+}
+
+interface DataInfo {
+	media: MediaInfo;
+	process: ProcessInfo;
+	timestamp: number;
+	window_name: string;
+}
+
+interface ReturnData {
+	AlbumThumbnail: string;
+	data: DataInfo;
+	icon: string;
+}

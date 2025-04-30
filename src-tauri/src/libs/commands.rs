@@ -4,12 +4,14 @@ use tauri::Emitter;
 use tauri::{AppHandle, Wry};
 
 #[tauri::command]
-pub async fn start(app_handle: AppHandle<Wry>) {
+pub fn start(app_handle: AppHandle<Wry>) {
+
+    log::info!("Start KizunaBaka Services");
+
     let config = crate::modules::get_config::load_config();
     let endpoint = config.server_config.endpoint.clone();
     let token = config.server_config.token.clone();
     let report_time = std::time::Duration::from_secs(config.server_config.report_time as u64);
-    crate::modules::logs::init_logger();
 
     std::thread::spawn(move || loop {
         std::thread::sleep(report_time);
@@ -23,10 +25,10 @@ pub async fn start(app_handle: AppHandle<Wry>) {
         app_handle
             .emit("home-event", home_event_data)
             .unwrap_or_else(|e| {
-                eprintln!("Failed to emit home-event: {}", e);
+                log::error!("Failed to emit home-event: {}", e);
             });
         app_handle.emit("log-event", logdata).unwrap_or_else(|e| {
-            eprintln!("Failed to emit log-event: {}", e);
+            log::error!("Failed to emit log-event: {}", e);
         });
     });
 }

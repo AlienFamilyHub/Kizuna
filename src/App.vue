@@ -3,7 +3,6 @@ import { invoke } from "@tauri-apps/api/core";
 import { listen } from "@tauri-apps/api/event";
 import { onMounted, onUnmounted } from "vue";
 
-import Sidebar from "./components/Sidebar.vue";
 import { useLogsStore } from "./stores/logsStore";
 
 const logsStore = useLogsStore();
@@ -23,8 +22,7 @@ onUnmounted(() => {
 </script>
 
 <template>
-	<Sidebar>
-		<NuxtPage class="ml-0 lg:ml-60" />
-	</Sidebar>
-	<UNotifications />
+	<div id="app">
+		<router-view />
+	</div>
 </template>
